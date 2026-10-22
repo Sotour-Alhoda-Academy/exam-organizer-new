@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#71358b">
+<title>منظّم اختبارات الأكاديمية</title>
+<style>
+:root{--p:#71358b;--p2:#9b59b6;--ink:#28232c;--muted:#766d7c;--line:#e9e1ed;--bg:#f8f5fa;--good:#16794a;--warn:#8a5b00;--bad:#b42335}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.6}
+header{background:linear-gradient(135deg,#5f2877,#9b59b6);color:#fff;padding:23px 15px;text-align:center}
+header h1{font-size:clamp(22px,4vw,30px);margin:0 0 5px}header p{margin:0;opacity:.9;font-size:14px}
+.wrap{max-width:1100px;margin:auto;padding:16px}
+.tabs{display:flex;gap:8px;margin:0 0 15px;flex-wrap:wrap}.tab{background:#eee5f2;color:var(--p);flex:1;min-width:140px}.tab.active{background:var(--p);color:white}
+.panel{display:none}.panel.active{display:block}
+.card{background:white;border:1px solid var(--line);border-radius:16px;padding:17px;margin-bottom:14px;box-shadow:0 4px 14px #2d153608}
+h2{font-size:19px;color:var(--p);margin:0 0 12px}h3{font-size:16px;margin:0 0 8px}
+p{margin:6px 0}.muted,.hint{font-size:12px;color:var(--muted)}.hint{line-height:1.8}
+label{display:block;font-size:13px;font-weight:bold;margin:8px 0 5px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #dcd2e2;border-radius:10px;font:inherit;background:#fff;color:var(--ink);min-width:0}
+input:focus,select:focus,textarea:focus{outline:2px solid #d9bce6;border-color:var(--p)}
+textarea{min-height:100px;resize:vertical}
+button{border:0;border-radius:10px;padding:11px 14px;font:inherit;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);color:white}.soft{background:#eee8f2;color:var(--p)}.green{background:#218653;color:white}.red{background:#b42335;color:white}.gray{background:#f0edf1;color:#514957}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{flex:0 0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px}
+.status{display:none;margin-top:12px;border-radius:10px;padding:10px 12px;font-size:13px;white-space:pre-wrap}.status.show{display:block}.status.ok{background:#e7f7ed;color:#17643c}.status.warn{background:#fff4d8;color:#815500}.status.bad{background:#fdebed;color:#9f1d2c}.status.info{background:#f0e8f5;color:#5d2676}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin:12px 0}.stat{background:#f8f2fb;border-radius:12px;text-align:center;padding:12px}.stat b{display:block;color:var(--p);font-size:23px}
+.teacher{border:1px solid var(--line);border-radius:13px;padding:12px;background:#fff}.teacher-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.teacher-name{font-weight:bold;color:var(--p)}.tag{display:inline-block;background:#eee8f2;color:var(--p);border-radius:20px;padding:3px 8px;font-size:11px;margin:3px 2px}.tag.good{background:#e6f6ed;color:#16794a}.tag.warn{background:#fff1cd;color:#8a5b00}
+.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px;min-width:520px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}th{background:#faf6fc;color:var(--p)}
+.issue{border:1px solid #eadbb0;background:#fffaf0;border-radius:12px;padding:12px;margin-top:8px}.issue small{color:var(--muted)}
+.hidden{display:none!important}.divider{border:0;border-top:1px solid var(--line);margin:16px 0}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 0 22px}
+@media(max-width:560px){.wrap{padding:10px}.card{padding:13px}.actions button{flex:1}.tabs .tab{min-width:0}.teacher-head{align-items:flex-start}}
+</style>
+</head>
+<body>
+<header>
+<h1>🌷 منظّم اختبارات الأكاديمية 🌷</h1>
+<p>تسجيل الطالبات وإدارة الاختبارات ومواعيد المعلمات</p>
+</header>
+<main class="wrap">
+<div class="tabs">
+<button class="tab active" data-tab="studentPanel">👩‍🎓 تسجيل الطالبة</button>
+<button class="tab" data-tab="adminPanel">🔐 لوحة الإدارة</button>
+</div>
+
+<section id="studentPanel" class="panel active">
+<div class="card">
+<h2>تسجيل الطالبة</h2>
+<p class="hint">أدخلي رقم الطالبة كما هو مسجّل لدى الإدارة، ثم راجعي الاسم والرواية قبل اختيار المعلمة.</p>
+<div id="publicExamStatus" class="status show info">جارٍ التحقق من الاختبار المتاح...</div>
+<div id="publicExamInfo" class="hidden"></div>
+<form id="lookupForm">
+<label for="studentNumber">رقم الطالبة</label>
+<input id="studentNumber" inputmode="numeric" autocomplete="off" maxlength="80" required placeholder="اكتبي رقم الطالبة">
+<div class="actions"><button class="primary" type="submit">التحقق من البيانات</button></div>
+</form>
+<div id="studentResult"></div>
+</div>
+<div class="card">
+<h2>الإبلاغ عن مشكلة</h2>
+<p class="hint">لو واجهتك مشكلة في البحث أو التسجيل، اكتبي رقمك إن أمكن ووضّحي المشكلة.</p>
+<form id="issueForm">
+<label for="issueStudentNumber">رقم الطالبة (اختياري)</label><input id="issueStudentNumber" maxlength="80">
+<label for="issueName">الاسم (اختياري)</label><input id="issueName" maxlength="120">
+<label for="issueCategory">نوع المشكلة</label>
+<select id="issueCategory"><option value="lookup">البحث عن الطالبة</option><option value="registration">إتمام التسجيل</option><option value="teacher_choice">اختيار المعلمة</option><option value="schedule">المواعيد</option><option value="other">أخرى</option></select>
+<label for="issueMessage">تفاصيل المشكلة</label><textarea id="issueMessage" maxlength="1000" required placeholder="اكتبي المشكلة باختصار..."></textarea>
+<div class="actions"><button class="soft" type="submit">إرسال البلاغ</button></div>
+</form>
+<div id="issueStatus" class="status"></div>
+</div>
+</section>
+
+<section id="adminPanel" class="panel">
+<div id="loginCard" class="card">
+<h2>دخول الإدارة</h2>
+<p class="hint">استخدمي حساب الإدارة المعتمد. الحساب لازم يكون مضافًا ضمن صلاحيات الإدارة في قاعدة البيانات.</p>
+<form id="loginForm">
+<label for="adminEmail">البريد الإلكتروني</label><input id="adminEmail" type="email" autocomplete="username" required>
+<label for="adminPassword">كلمة المرور</label><input id="adminPassword" type="password" autocomplete="current-password" required>
+<div class="actions"><button class="primary" type="submit">تسجيل الدخول</button></div>
+</form>
+<div id="loginStatus" class="status"></div>
+</div>
+
+<div id="adminWorkspace" class="hidden">
+<div class="card">
+<div class="teacher-head"><h2>لوحة الإدارة</h2><button id="logoutBtn" class="gray" type="button">تسجيل الخروج</button></div>
+<div id="adminStatus" class="status"></div>
+<label for="examSelect">الاختبار الحالي</label>
+<select id="examSelect"><option value="">لا توجد اختبارات</option></select>
+<div class="actions"><button class="soft" id="refreshAdmin" type="button">تحديث البيانات</button></div>
+<div id="dashboardStats" class="stats"></div>
+</div>
+
+<div class="card">
+<h2>إضافة اختبار أو تعديل بياناته</h2>
+<form id="examForm">
+<input id="editExamId" type="hidden">
+<label for="examTitle">اسم الاختبار</label><input id="examTitle" maxlength="200" required placeholder="مثال: اختبار سورة النور">
+<div class="two">
+<div><label for="examDate">تاريخ الاختبار</label><input id="examDate" type="date"></div>
+<div><label for="examDuration">مدة الطالبة</label><select id="examDuration"><option value="5">5 دقائق</option><option value="10">10 دقائق</option></select></div>
+</div>
+<div class="two">
+<div><label for="examStatus">حالة الاختبار</label><select id="examStatus"><option value="draft">مسودة</option><option value="published">منشور للطالبات</option><option value="completed">انتهى</option><option value="archived">مؤرشف</option></select></div>
+<div><label for="registrationState">التسجيل</label><select id="registrationState"><option value="closed">مغلق</option><option value="paused">متوقف مؤقتًا</option><option value="open">مفتوح</option></select></div>
+</div>
+<label for="examInstructions">تعليمات للطالبات</label><textarea id="examInstructions" maxlength="2000" placeholder="اختياري"></textarea>
+<div class="actions"><button class="primary" type="submit">حفظ الاختبار</button><button class="gray" type="button" id="newExamBtn">اختبار جديد</button></div>
+</form>
+<div id="examFormStatus" class="status"></div>
+</div>
+
+<div class="card">
+<h2>استيراد قائمة الطالبات</h2>
+<p class="hint">كل طالبة في سطر مستقل بالترتيب: <b>رقم الطالبة | الاسم | الرواية</b>. الرواية يمكن أن تكون «قالون» أو «حفص»؛ ولو تُركت فارغة فستُعتبر حفص. لا تضعي أرقامًا مكررة لنفس الاختبار.</p>
+<label for="studentsImport">قائمة الطالبات</label>
+<textarea id="studentsImport" placeholder="1001 | مريم أحمد | حفص&#10;1002 | سارة محمد | قالون"></textarea>
+<div class="actions"><button id="importStudentsBtn" class="primary" type="button">استيراد القائمة</button></div>
+<div id="importStatus" class="status"></div>
+</div>
+
+<div class="card">
+<h2>إدارة المعلمات وسعة الاختبار</h2>
+<p class="hint">أضيفي المعلمة أولًا، ثم حددي توافرها في الاختبار الحالي، ومواعيدها، وسعتها. تفعيل خيار قالون يسمح لها باستقبال طالبات قالون.</p>
+<form id="teacherForm">
+<input id="teacherId" type="hidden">
+<label for="teacherName">اسم المعلمة</label><input id="teacherName" required maxlength="160">
+<div class="two">
+<div><label for="teacherPhone">رقم الهاتف</label><input id="teacherPhone" maxlength="80"></div>
+<div><label for="teacherWhatsapp">واتساب</label><input id="teacherWhatsapp" maxlength="120"></div>
+<div><label for="teacherTelegram">تليجرام</label><input id="teacherTelegram" maxlength="120"></div>
+<div><label for="teacherMessenger">مسنجر</label><input id="teacherMessenger" maxlength="120"></div>
+</div>
+<label for="teacherNotes">ملاحظات</label><input id="teacherNotes" maxlength="1000">
+<div class="actions"><button class="primary" type="submit">حفظ المعلمة</button><button class="gray" type="button" id="clearTeacherBtn">تفريغ الحقول</button></div>
+</form>
+<div id="teacherFormStatus" class="status"></div>
+<hr class="divider">
+<div id="teachersList" class="grid"></div>
+</div>
+
+<div class="card">
+<h2>التسجيلات والبلاغات</h2>
+<div id="registrationsTable" class="table-wrap"></div>
+<div id="issuesList"></div>
+</div>
+</div>
+</section>
+<footer>منظّم اختبارات الأكاديمية · لا تشاركي كلمة مرور الإدارة مع أي شخص</footer>
+</main>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const SUPABASE_URL = "https://hwlwtolzohfrjkxsoqyc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_rFidP6TBB8thOXqsKbP4BA_VCjLckBa";
+const API_URL = SUPABASE_URL + "/functions/v1/exam-organizer-api";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+const $ = (id) => document.getElementById(id);
+let currentExam = null, foundStudent = null, publicTeachers = [], exams = [], teachers = [], dashboard = null;
+let accessToken = null;
+const activeStatuses = ["registered","confirmed","needs_review"];
+
+function status(id, message, kind="info") {
+  const el = $(id); if (!el) return;
+  el.className = "status show " + kind; el.textContent = message || "";
+}
+function clearStatus(id) { const el=$(id); if(el){el.className="status";el.textContent="";} }
+function safe(v) { return String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function showTab(id) {
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===id));
+}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
+
+async function api(action, payload={}, auth=true) {
+  const headers = {"Content-Type":"application/json","apikey":SUPABASE_KEY};
+  if (auth && accessToken) headers.Authorization = "Bearer " + accessToken;
+  const response = await fetch(API_URL,{method:"POST",headers,body:JSON.stringify({action,...payload})});
+  let result={}; try { result=await response.json(); } catch {}
+  if (!response.ok) throw new Error(result.error || "REQUEST_FAILED");
+  return result;
+}
+const messages = {
+  RATE_LIMITED:"تم إرسال طلبات كثيرة خلال وقت قصير. انتظري دقيقة ثم حاولي مرة أخرى.",
+  NO_PUBLISHED_EXAM:"لا يوجد اختبار منشور للتسجيل حاليًا.",
+  REGISTRATION_PAUSED:"التسجيل متوقف مؤقتًا. حاولي لاحقًا.",
+  REGISTRATION_CLOSED:"التسجيل مغلق حاليًا.",
+  STUDENT_NUMBER_REQUIRED:"من فضلك أدخلي رقم الطالبة.",
+  STUDENT_NOT_FOUND:"لم يتم العثور على رقم الطالبة. راجعي الرقم أو أرسلي بلاغًا.",
+  ALREADY_REGISTERED:"يوجد تسجيل سابق لهذا الرقم في الاختبار.",
+  TEACHER_NOT_AVAILABLE:"المعلمة غير متاحة لهذا الاختبار. اختاري معلمة أخرى.",
+  TEACHER_DOES_NOT_ACCEPT_QALUN:"المعلمة المحددة لا تستقبل طالبات قالون.",
+  TEACHER_CAPACITY_REACHED:"اكتملت سعة المعلمة. اختاري معلمة أخرى.",
+  ADMIN_AUTH_REQUIRED:"سجّلي الدخول أولًا.",
+  ADMIN_AUTH_INVALID:"انتهت جلسة الدخول. سجّلي الدخول مرة أخرى.",
+  ADMIN_ACCESS_DENIED:"الحساب مسجّل لكنه غير مضاف إلى قائمة الإدارة.",
+  INVALID_FIELDS:"راجعي الحقول المطلوبة.",
+  TITLE_REQUIRED:"اكتبي اسم الاختبار.",
+  TEACHER_NAME_REQUIRED:"اكتبي اسم المعلمة.",
+  CAPACITY_OVERRIDE_REASON_REQUIRED:"اكتبي سبب تغيير السعة الاستثنائية."
+};
+function readable(error) {
+  const key = typeof error === "string" ? error : error?.message;
+  return messages[key] || (key === "Invalid login credentials" ? "البريد الإلكتروني أو كلمة المرور غير صحيحين." : key === "Failed to fetch" ? "تعذر الاتصال بالخادم. تحققي من الإنترنت وحاولي مرة أخرى." : "حدث خطأ أثناء تنفيذ الطلب. حاولي مرة أخرى.");
+}
+function capacityLabel(t) {
+  if (t.remaining === null || t.remaining === undefined) return "السعة غير محددة";
+  return t.remaining > 0 ? "متاح " + t.remaining + " مكان" : "اكتملت السعة";
+}
+async function loadPublicExam() {
+  try {
+    const data = await api("public_exam",{},false);
+    currentExam=data.exam; publicTeachers=data.teachers||[];
+    if (!currentExam) {
+      status("publicExamStatus","لا يوجد اختبار منشور للتسجيل حاليًا.","warn");
+      $("publicExamInfo").classList.add("hidden"); $("lookupForm").classList.add("hidden"); return;
+    }
+    $("publicExamInfo").classList.remove("hidden");
+    $("publicExamInfo").innerHTML = '<div class="stats"><div class="stat"><b>'+safe(currentExam.title)+'</b><span>الاختبار</span></div><div class="stat"><b>'+safe(currentExam.exam_date||"لم يُحدد")+'</b><span>التاريخ</span></div><div class="stat"><b>'+safe(currentExam.default_duration_minutes)+' دقائق</b><span>مدة الطالبة</span></div></div>' + (currentExam.instructions?'<p class="hint">'+safe(currentExam.instructions)+'</p>':"");
+    if (currentExam.registration_state === "open") {
+      status("publicExamStatus","التسجيل مفتوح. أدخلي رقم الطالبة للمتابعة.","ok"); $("lookupForm").classList.remove("hidden");
+    } else {
+      status("publicExamStatus",currentExam.registration_state==="paused"?"التسجيل متوقف مؤقتًا.":"التسجيل مغلق حاليًا.","warn"); $("lookupForm").classList.add("hidden");
+    }
+  } catch(e) { status("publicExamStatus",readable(e),"bad"); }
+}
+$("lookupForm").addEventListener("submit",async e=>{
+  e.preventDefault(); const num=$("studentNumber").value.trim();
+  $("studentResult").innerHTML=""; foundStudent=null;
+  try {
+    const r=await api("lookup_student",{student_number:num,exam_id:currentExam?.id},false);
+    foundStudent={...r.student,student_number:num}; $("issueStudentNumber").value=num; $("issueName").value=r.student.name;
+    if (r.alreadyRegistered) {
+      $("studentResult").innerHTML='<div class="status show warn">يوجد تسجيل سابق لهذا الرقم في الاختبار. لو محتاجة تعديلًا أو عندك مشكلة، استخدمي نموذج البلاغ.</div>';
+      return;
+    }
+    const isQalun=r.student.riwaya==="qalun";
+    const choices=publicTeachers.filter(t=>(!isQalun||t.acceptsQalun)&&(t.remaining===null||t.remaining>0));
+    const cards=choices.map(t=>'<label class="teacher" style="display:block;cursor:pointer"><span><input type="radio" name="teacherChoice" value="'+safe(t.id)+'" style="width:auto;margin-left:7px">'+safe(t.name)+'</span><div class="hint">'+(t.acceptsQalun?'<span class="tag good">تستقبل قالون</span>':'')+'<span class="tag">'+safe(capacityLabel(t))+'</span>'+(t.startTime&&t.endTime?'<span class="tag">'+safe(t.startTime)+' - '+safe(t.endTime)+'</span>':'')+'</div></label>').join("");
+    $("studentResult").innerHTML='<div class="status show ok">تم العثور على الطالبة. راجعي البيانات قبل التسجيل.</div><div class="card" style="margin-top:10px"><h3>'+safe(r.student.name)+'</h3><span class="tag '+(isQalun?'warn':'good')+'">'+(isQalun?'رواية قالون':'رواية حفص')+'</span><label>اختاري المعلمة</label><div class="grid">'+(cards||'<p class="hint">لا توجد معلمات متاحات لهذه الرواية حاليًا.</p>')+'</div><div class="actions"><button id="registerBtn" class="green" type="button" '+(!choices.length?'disabled':'')+'>تأكيد التسجيل</button></div><div id="registerStatus" class="status"></div></div>';
+    $("registerBtn")?.addEventListener("click",async()=>{
+      const selected=document.querySelector('input[name="teacherChoice"]:checked');
+      if(!selected){status("registerStatus","اختاري المعلمة أولًا.","warn");return;}
+      $("registerBtn").disabled=true;
+      try {
+        await api("register_student",{exam_id:currentExam.id,student_number:num,teacher_id:selected.value},false);
+        status("registerStatus","تم تسجيل اختيارك بنجاح. احتفظي بهذه المعلومة وتابعي أي تعليمات من الإدارة.","ok");
+        await loadPublicExam();
+      } catch(err) { status("registerStatus",readable(err),"bad"); $("registerBtn").disabled=false; }
+    });
+  } catch(err) { $("studentResult").innerHTML='<div class="status show bad">'+safe(readable(err))+'</div>'; }
+});
+$("issueForm").addEventListener("submit",async e=>{
+  e.preventDefault(); const message=$("issueMessage").value.trim();
+  try {
+    await api("report_issue",{exam_id:currentExam?.id,student_number:$("issueStudentNumber").value.trim(),student_name:$("issueName").value.trim(),category:$("issueCategory").value,message},false);
+    status("issueStatus","تم إرسال البلاغ للإدارة. شكرًا لتنبيهنا.","ok"); $("issueMessage").value="";
+  } catch(err) { status("issueStatus",currentExam?readable(err):"لا يوجد اختبار منشور يمكن إرفاق البلاغ به حاليًا.","bad"); }
+});
+
+async function refreshSession() {
+  const {data}=await supabase.auth.getSession();
+  accessToken=data.session?.access_token||null;
+  $("loginCard").classList.toggle("hidden",!!accessToken);
+  $("adminWorkspace").classList.toggle("hidden",!accessToken);
+  if(accessToken) await loadAdmin();
+}
+$("loginForm").addEventListener("submit",async e=>{
+  e.preventDefault(); status("loginStatus","جارٍ تسجيل الدخول...","info");
+  const {data,error}=await supabase.auth.signInWithPassword({email:$("adminEmail").value.trim(),password:$("adminPassword").value});
+  if(error){status("loginStatus",readable(error),"bad");return;}
+  accessToken=data.session?.access_token||null;
+  $("adminPassword").value="";
+  await refreshSession();
+  if(accessToken) status("adminStatus","تم تسجيل الدخول. لو ظهرت رسالة رفض صلاحيات، فالحساب يحتاج إضافته إلى قائمة الإدارة.","ok");
+});
+$("logoutBtn").addEventListener("click",async()=>{await supabase.auth.signOut();accessToken=null;dashboard=null;await refreshSession();});
+$("refreshAdmin").addEventListener("click",()=>loadAdmin());
+$("examSelect").addEventListener("change",async()=>{
+  const exam=exams.find(x=>x.id===$("examSelect").value);
+  if(exam) fillExamForm(exam);
+  await loadDashboard();
+  await renderTeachers();
+});
+$("newExamBtn").addEventListener("click",()=>{ $("examForm").reset(); $("editExamId").value=""; $("examDuration").value="5"; $("examStatus").value="draft"; $("registrationState").value="closed"; clearStatus("examFormStatus"); });
+function fillExamForm(x) {
+  $("editExamId").value=x.id; $("examTitle").value=x.title||""; $("examDate").value=x.exam_date||"";
+  $("examDuration").value=String(x.default_duration_minutes||5); $("examStatus").value=x.status||"draft";
+  $("registrationState").value=x.registration_state||"closed"; $("examInstructions").value=x.instructions||"";
+}
+async function loadAdmin() {
+  if(!accessToken)return;
+  try {
+    const [er,tr]=await Promise.all([api("admin_list_exams"),api("admin_list_teachers")]);
+    exams=er.exams||[]; teachers=tr.teachers||[];
+    const prior=$("examSelect").value;
+    $("examSelect").innerHTML=exams.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+' · '+safe(x.status)+'</option>').join("")||'<option value="">لا توجد اختبارات</option>';
+    if(exams.some(x=>x.id===prior)) $("examSelect").value=prior;
+    else if(exams.length) $("examSelect").value=exams[0].id;
+    const selected=exams.find(x=>x.id===$("examSelect").value);
+    if(selected)fillExamForm(selected);
+    await loadDashboard(); await renderTeachers();
+    status("adminStatus","تم تحميل بيانات الإدارة.","ok");
+  } catch(e) { status("adminStatus",readable(e),"bad"); if(["ADMIN_AUTH_INVALID","ADMIN_AUTH_REQUIRED"].includes(e.message)){await supabase.auth.signOut();await refreshSession();} }
+}
+async function loadDashboard() {
+  const examId=$("examSelect").value;
+  if(!examId){$("dashboardStats").innerHTML="";$("registrationsTable").innerHTML='<p class="hint">أنشئي اختبارًا أولًا.</p>';$("issuesList").innerHTML="";dashboard=null;return;}
+  try {
+    dashboard=await api("admin_dashboard",{exam_id:examId});
+    const c=dashboard.counts||{};
+    $("dashboardStats").innerHTML=[["الطالبات",c.students||0],["التسجيلات",c.registrations||0],["المسجلات",c.registered||0],["البلاغات",c.issues||0]].map(x=>'<div class="stat"><b>'+safe(x[1])+'</b><span>'+safe(x[0])+'</span></div>').join("");
+    const regs=dashboard.registrations||[];
+    $("registrationsTable").innerHTML='<h3>ملخص التسجيلات</h3>'+(regs.length?'<div class="table-wrap"><table><thead><tr><th>الطالبة</th><th>الرواية</th><th>الحالة</th><th>المعلمة</th><th>إجراء</th></tr></thead><tbody>'+regs.map(r=>'<tr><td>'+safe(r.student?.student_name||r.id.slice(0,8))+'<div class="hint">'+safe(r.student?.student_number||"")+'</div></td><td>'+safe(r.student?.riwaya==="qalun"?"قالون":"حفص")+'</td><td><select data-reg-status="'+safe(r.id)+'">'+["registered","confirmed","needs_review","cancelled","completed"].map(s=>'<option '+(r.status===s?'selected':'')+' value="'+s+'">'+({"registered":"مسجلة","confirmed":"مؤكدة","needs_review":"تحتاج مراجعة","cancelled":"ملغاة","completed":"مكتملة"}[s])+'</option>').join("")+'</select></td><td>'+safe((dashboard.teacherSettings||[]).find(t=>t.teacher_id===r.assigned_teacher_id)?.teachers?.full_name||"غير محددة")+'</td><td><button class="soft" data-save-reg="'+safe(r.id)+'">حفظ الحالة</button></td></tr>').join("")+'</tbody></table></div>':'<p class="hint">لا توجد تسجيلات بعد.</p>');
+    $("registrationsTable").querySelectorAll("[data-save-reg]").forEach(btn=>btn.addEventListener("click",async()=>{
+      const id=btn.dataset.saveReg, select=$("registrationsTable").querySelector('[data-reg-status="'+id+'"]');
+      btn.disabled=true;try{await api("admin_update_registration",{registration_id:id,status:select.value});status("adminStatus","تم تحديث حالة التسجيل.","ok");await loadDashboard();}catch(e){status("adminStatus",readable(e),"bad");}finally{btn.disabled=false;}
+    }));
+    $("issuesList").innerHTML='<h3 style="margin-top:16px">البلاغات</h3>'+((dashboard.issues||[]).map(issue=>'<div class="issue"><b>'+safe(issue.student_name||"طالبة غير محددة")+'</b> <small>('+safe(issue.student_number||"بدون رقم")+' · '+safe(issue.category)+')</small><p>'+safe(issue.message)+'</p><div class="two"><div><label>الحالة</label><select id="issue-status-'+safe(issue.id)+'">'+["open","in_progress","resolved","dismissed"].map(s=>'<option '+(issue.status===s?'selected':'')+' value="'+s+'">'+({"open":"مفتوح","in_progress":"قيد المعالجة","resolved":"تم الحل","dismissed":"مستبعد"}[s])+'</option>').join("")+'</select></div><div><label>ملاحظة الإدارة</label><input id="issue-note-'+safe(issue.id)+'" value="'+safe(issue.admin_note||"")+'"></div></div><div class="actions"><button class="soft" data-save-issue="'+safe(issue.id)+'">حفظ البلاغ</button></div></div>').join("")||'<p class="hint">لا توجد بلاغات.</p>');
+    $("issuesList").querySelectorAll("[data-save-issue]").forEach(btn=>btn.addEventListener("click",async()=>{
+      const id=btn.dataset.saveIssue;btn.disabled=true;
+      try{await api("admin_update_issue",{issue_id:id,status:$("issue-status-"+id).value,admin_note:$("issue-note-"+id).value});status("adminStatus","تم تحديث البلاغ.","ok");await loadDashboard();}catch(e){status("adminStatus",readable(e),"bad");}finally{btn.disabled=false;}
+    }));
+  } catch(e) { status("adminStatus",readable(e),"bad"); }
+}
+$("examForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  try {
+    const r=await api("admin_save_exam",{exam_id:$("editExamId").value||undefined,title:$("examTitle").value,exam_date:$("examDate").value||null,default_duration_minutes:Number($("examDuration").value),status:$("examStatus").value,registration_state:$("registrationState").value,instructions:$("examInstructions").value});
+    status("examFormStatus","تم حفظ الاختبار.","ok"); await loadAdmin(); $("examSelect").value=r.exam.id;fillExamForm(r.exam);await loadDashboard();await renderTeachers();await loadPublicExam();
+  } catch(err){status("examFormStatus",readable(err),"bad");}
+});
+$("importStudentsBtn").addEventListener("click",async()=>{
+  const examId=$("examSelect").value;if(!examId){status("importStatus","أنشئي أو اختاري اختبارًا أولًا.","warn");return;}
+  const lines=$("studentsImport").value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  const students=lines.map(line=>{const parts=line.includes("|")?line.split("|"):line.split(/[,\t]/);const [student_number,student_name,riwaya]=parts.map(s=>s.trim());return {student_number,student_name,riwaya:/قالون|qalun/i.test(riwaya||"")?"qalun":"hafs"};}).filter(s=>s.student_number&&s.student_name);
+  if(!students.length){status("importStatus","لم أجد سطورًا صالحة. استخدمي: الرقم | الاسم | الرواية","warn");return;}
+  try{const r=await api("admin_import_students",{exam_id:examId,students});status("importStatus","تم حفظ "+r.saved+" طالبة/طالبات.","ok");await loadDashboard();}catch(e){status("importStatus",readable(e),"bad");}
+});
+$("teacherForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  try{await api("admin_save_teacher",{teacher_id:$("teacherId").value||undefined,full_name:$("teacherName").value,phone:$("teacherPhone").value,whatsapp:$("teacherWhatsapp").value,telegram:$("teacherTelegram").value,messenger:$("teacherMessenger").value,notes:$("teacherNotes").value});status("teacherFormStatus","تم حفظ بيانات المعلمة.","ok");clearTeacherForm();const r=await api("admin_list_teachers");teachers=r.teachers||[];await renderTeachers();}
+  catch(err){status("teacherFormStatus",readable(err),"bad");}
+});
+function clearTeacherForm(){ $("teacherForm").reset();$("teacherId").value=""; }
+$("clearTeacherBtn").addEventListener("click",clearTeacherForm);
+async function renderTeachers() {
+  const examId=$("examSelect").value;
+  if(!teachers.length){$("teachersList").innerHTML='<p class="hint">أضيفي أول معلمة من النموذج أعلاه.</p>';return;}
+  let settings=dashboard?.teacherSettings||[];
+  $("teachersList").innerHTML=teachers.map(t=>{
+    const s=settings.find(x=>x.teacher_id===t.id)||{};
+    return '<div class="teacher"><div class="teacher-head"><div class="teacher-name">'+safe(t.full_name)+'</div><button type="button" class="soft" data-edit-teacher="'+safe(t.id)+'">تعديل البيانات</button></div><div class="hint">'+(t.is_active?'<span class="tag good">نشطة</span>':'<span class="tag">غير نشطة</span>')+'</div><div class="two"><div><label>متاحة للاختبار</label><select id="avail-'+safe(t.id)+'"><option value="true" '+(s.is_available!==false?'selected':'')+'>نعم</option><option value="false" '+(s.is_available===false?'selected':'')+'>لا</option></select></div><div><label>تستقبل قالون</label><select id="qalun-'+safe(t.id)+'"><option value="false" '+(!s.accepts_qalun?'selected':'')+'>لا</option><option value="true" '+(s.accepts_qalun?'selected':'')+'>نعم</option></select></div><div><label>من الساعة</label><input id="start-'+safe(t.id)+'" type="time" value="'+safe(s.start_time||"")+'"></div><div><label>إلى الساعة</label><input id="end-'+safe(t.id)+'" type="time" value="'+safe(s.end_time||"")+'"></div><div><label>السعة الأساسية (اختياري)</label><input id="cap-'+safe(t.id)+'" type="number" min="0" value="'+safe(s.capacity??"")+'" placeholder="تحسب من الوقت إن تُركت فارغة"></div><div><label>سعة استثنائية (اختياري)</label><input id="override-'+safe(t.id)+'" type="number" min="0" value="'+safe(s.capacity_override??"")+'"></div><div><label>سبب السعة الاستثنائية</label><input id="reason-'+safe(t.id)+'" maxlength="300" value="'+safe(s.capacity_override_reason||"")+'"></div><div><label>مدة الطالبة</label><select id="duration-'+safe(t.id)+'"><option value="" '+(!s.duration_minutes?'selected':'')+'>حسب الاختبار</option><option value="5" '+(s.duration_minutes===5?'selected':'')+'>5 دقائق</option><option value="10" '+(s.duration_minutes===10?'selected':'')+'>10 دقائق</option></select></div></div><div class="actions"><button class="primary" type="button" data-save-setting="'+safe(t.id)+'" '+(!examId?'disabled':'')+'>حفظ إعدادات الاختبار</button></div></div>';
+  }).join("");
+  $("teachersList").querySelectorAll("[data-edit-teacher]").forEach(btn=>btn.addEventListener("click",()=>{const t=teachers.find(x=>x.id===btn.dataset.editTeacher);if(!t)return;$("teacherId").value=t.id;$("teacherName").value=t.full_name||"";$("teacherPhone").value=t.phone||"";$("teacherWhatsapp").value=t.whatsapp||"";$("teacherTelegram").value=t.telegram||"";$("teacherMessenger").value=t.messenger||"";$("teacherNotes").value=t.notes||"";window.scrollTo({top:$("teacherForm").getBoundingClientRect().top+window.scrollY-20,behavior:"smooth"});}));
+  $("teachersList").querySelectorAll("[data-save-setting]").forEach(btn=>btn.addEventListener("click",async()=>{
+    const id=btn.dataset.saveSetting;btn.disabled=true;
+    const val=(key)=>$(""+key+"-"+id).value;
+    const cap=val("cap"),over=val("override"),duration=val("duration");
+    try {
+      await api("admin_save_teacher_settings",{exam_id:examId,teacher_id:id,is_available:val("avail")==="true",accepts_qalun:val("qalun")==="true",start_time:val("start")||null,end_time:val("end")||null,capacity:cap===""?null:Number(cap),capacity_override:over===""?null:Number(over),capacity_override_reason:val("reason"),duration_minutes:duration===""?null:Number(duration)});
+      status("adminStatus","تم حفظ إعدادات المعلمة.","ok");await loadDashboard();await loadPublicExam();
+    } catch(e){status("adminStatus",readable(e),"bad");}finally{btn.disabled=false;}
+  }));
+}
+async function loadAdminPublicRefresh(){await loadPublicExam();}
+await loadPublicExam();
+await refreshSession();
+</script>
+</body>
+</html>
