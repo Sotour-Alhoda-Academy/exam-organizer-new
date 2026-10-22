@@ -130,13 +130,13 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <label for="examTitle">اسم الاختبار</label><input id="examTitle" maxlength="200" required placeholder="مثال: اختبار سورة النور">
 <div class="two">
 <div><label for="examDate">تاريخ الاختبار</label><input id="examDate" type="date"></div>
-<div><label for="examDuration">مدة الطالبة</label><select id="examDuration"><option value="5">5 دقائق</option><option value="10">10 دقائق</option></select></div>
+<div><input id="examDuration" type="hidden" value="5"></div>
 </div>
 <div class="two">
 <div><label for="examStatus">حالة الاختبار</label><select id="examStatus"><option value="draft">مسودة</option><option value="published">منشور للطالبات</option><option value="completed">انتهى</option><option value="archived">مؤرشف</option></select></div>
 <div><label for="registrationState">التسجيل</label><select id="registrationState"><option value="closed">مغلق</option><option value="paused">متوقف مؤقتًا</option><option value="open">مفتوح</option></select></div>
 </div>
-<label for="examInstructions">تعليمات للطالبات</label><textarea id="examInstructions" maxlength="2000" placeholder="اختياري"></textarea>
+<input id="examInstructions" type="hidden" value="">
 <div class="actions"><button class="primary" type="submit">حفظ الاختبار</button><button class="gray" type="button" id="newExamBtn">اختبار جديد</button></div>
 </form>
 <div id="examFormStatus" class="status"></div>
@@ -149,24 +149,17 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 
 <div class="card" id="guide-students">
 <h2>👩‍🎓 1) قائمة الطالبات</h2>
-<p class="hint">الصقي القائمة كما تصلك. لو السطر فيه طالبتان، استخدمي 🤝 أو أي فاصل واضح. وإذا كُتبت «قالون» في نهاية السطر فالرواية تُطبق على الطالبتين معًا.</p>
-<textarea id="studentsInput" rows="7" placeholder="1) أميرة محمد 🤝 نادين غزي&#10;2) جهاد عبدالقادر 🤝 عبير عبدالقادر&#10;3) روان السيد 🤝 رنا رمضان قالون"></textarea>
+<p class="hint">الصقي قائمة الطالبات التي تحتوي على رقم كل طالبة واسمها. الصيغة: رقم الطالبة | الاسم | الرواية. القائمة نفسها ستُستخدم في واجهة الطالبات بعد تحليلها.</p>
+<textarea id="studentsInput" rows="7" placeholder="1001 | أميرة محمد | حفص&#10;1002 | نادين غزي | حفص&#10;1003 | روان السيد | قالون"></textarea>
 <div class="actions">
 <button type="button" id="parseStudentsBtn" class="primary">🔍 فصل الطالبات</button>
 <button type="button" id="clearStudentsBtn" class="gray">🗑️ مسح</button>
 <button type="button" id="undoInputsBtn" class="gray">↩️ تراجع</button>
 </div>
-<div id="studentsStatus" class="status"></div><div id="studentsStats" class="stats"></div><div id="studentIssues"></div><div id="studentsPreview" class="table-wrap"></div>
+<div id="studentsStatus" class="status"></div><div id="studentsStats" class="stats"></div><div id="studentIssues"></div><div class="actions"><button type="button" id="toggleStudentNames" class="soft" aria-expanded="false">👁️ إظهار أسماء الطالبات</button></div><div id="studentsPreview" class="table-wrap hidden"></div>
 </div>
 
-<details class="card optional-roster"><summary>📋 استيراد سجل الطالبات للتسجيل بالموقع (اختياري)</summary><div class="roster-inner">
-<h2>📋 استيراد سجل الطالبات للتسجيل بالموقع</h2>
-<p class="hint">هذا القسم اختياري، ويُستخدم فقط إذا كنتِ تريدين تحديث سجل الطالبات اللاتي سيستخدمن صفحة التسجيل بالموقع. أما قائمة الاختبار فتُجهّز في القسم السابق.</p>
-<label for="studentsImport">قائمة الطالبات</label>
-<textarea id="studentsImport" placeholder="1001 | مريم أحمد | حفص&#10;1002 | سارة محمد | قالون"></textarea>
-<div class="actions"><button id="importStudentsBtn" class="primary" type="button">استيراد القائمة</button></div>
-<div id="importStatus" class="status"></div>
-</div></details>
+
 
 <div class="card" id="scheduleCard">
 <h2>🕐 2) جدول مواعيد المعلمات</h2>
@@ -449,13 +442,6 @@ $("examForm").addEventListener("submit",async e=>{
     status("examFormStatus","تم حفظ الاختبار.","ok"); await loadAdmin(); $("examSelect").value=r.exam.id;fillExamForm(r.exam);await loadDashboard();await renderTeachers();await loadPublicExam();
   } catch(err){status("examFormStatus",readable(err),"bad");}
 });
-$("importStudentsBtn").addEventListener("click",async()=>{
-  const examId=$("examSelect").value;if(!examId){status("importStatus","أنشئي أو اختاري اختبارًا أولًا.","warn");return;}
-  const lines=$("studentsImport").value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  const students=lines.map(line=>{const parts=line.includes("|")?line.split("|"):line.split(/[,\t]/);const [student_number,student_name,riwaya]=parts.map(s=>s.trim());return {student_number,student_name,riwaya:/قالون|qalun/i.test(riwaya||"")?"qalun":"hafs"};}).filter(s=>s.student_number&&s.student_name);
-  if(!students.length){status("importStatus","لم أجد سطورًا صالحة. استخدمي: الرقم | الاسم | الرواية","warn");return;}
-  try{const r=await api("admin_import_students",{exam_id:examId,students});status("importStatus","تم حفظ "+r.saved+" طالبة/طالبات.","ok");await loadDashboard();}catch(e){status("importStatus",readable(e),"bad");}
-});
 $("teacherForm").addEventListener("submit",async e=>{
   e.preventDefault();
   try{
@@ -522,12 +508,22 @@ function examNorm(v){return String(v||"").normalize("NFKC").replace(/[أإآ]/g,
 function examCleanName(v){return String(v||"").replace(/[0-9٠-٩]+/g," ").replace(/[*_~`#()（）\[\]{}«»]/g," ").replace(/(قالون|حفص|ورش)/gi," ").replace(/\s+/g," ").trim();}
 function examSplitLine(raw){
  let line=String(raw||"").trim(); if(!line)return [];
+ if(line.includes("|")){
+   const fields=line.split("|").map(x=>x.trim());
+   if(fields.length>=2 && fields[0] && fields[1]){
+     const student_number=scheduleDigits(fields[0]).replace(/\s/g,"");
+     const name=examCleanName(fields[1]);
+     const tail=fields.slice(2).join(" ");
+     const riwayah=/قالون|قولون|qalun/i.test(tail)?"قالون":(/ورش/.test(tail)?"ورش":"حفص");
+     if(student_number && name)return [{name,student_number,riwayah,groupNo:"student-"+student_number,line:raw}];
+   }
+ }
  const group=line.match(/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[（(]?\s*([0-9٠-٩]+)\s*[)）]?\s*(?:[🌷🎀👑🪷🌸🌺🌼🌿🫂/\\._\-–—*:：+]|\s)*/);
  const groupNo=group?group[1]:""; if(group)line=line.slice(group[0].length);
  const riwayah=/قالون|قولون/i.test(line)?"قالون":(/ورش/.test(line)?"ورش":"حفص");
  const parts=line.split(/\s*(?:🤝|❤|❤️|♥|💕|💗|💞|💓|💖|💘|💝|💟|🩷|🍒|✨|🎀|🌿|🪻|🌸|🌷|🌹|🫂|🥀|🌱|🪷|👑|➖|↔|<>|\||\/|\+|←|→)\s*/u).filter(Boolean);
  if(parts.length===1 && !groupNo)return [];
- return parts.map(p=>({name:examCleanName(p),riwayah,groupNo})).filter(p=>p.name);
+ return parts.map(p=>({name:examCleanName(p),student_number:"",riwayah,groupNo})).filter(p=>p.name);
 }
 function parseExamStudents(){
  parsedExamStudents=[];
@@ -545,7 +541,7 @@ function parseExamStudents(){
  const dup={};parsedExamStudents.forEach(st=>(dup[examNorm(st.name)] ||= []).push(st));
  const dups=Object.values(dup).filter(a=>a.length>1).length, q=parsedExamStudents.filter(x=>x.riwayah==="قالون").length;
  $("studentsStats").innerHTML=parsedExamStudents.length?'<div class="stat"><b>'+parsedExamStudents.length+'</b> إجمالي الطالبات</div><div class="stat"><b>'+(parsedExamStudents.length-q)+'</b> حفص/ورش</div><div class="stat"><b>'+q+'</b> قالون</div><div class="stat"><b>'+dups+'</b> أسماء مكررة</div>':'';
- $("studentsPreview").innerHTML=parsedExamStudents.length?'<table class="schedule-preview-table"><thead><tr><th>#</th><th>اسم الطالبة</th><th>الرواية</th></tr></thead><tbody>'+parsedExamStudents.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+safe(x.name)+'</td><td>'+safe(x.riwayah)+'</td></tr>').join("")+'</tbody></table>':'';
+ $("studentsPreview").innerHTML=parsedExamStudents.length?'<table class="schedule-preview-table"><thead><tr><th>رقم الطالبة</th><th>اسم الطالبة</th><th>الرواية</th></tr></thead><tbody>'+parsedExamStudents.map(x=>'<tr><td>'+safe(x.student_number||"غير موجود")+'</td><td>'+safe(x.name)+'</td><td>'+safe(x.riwayah)+'</td></tr>').join("")+'</tbody></table>':'';
  $("studentsStatus").className="status "+(parsedExamStudents.length?"ok":"bad");
  $("studentsStatus").textContent=parsedExamStudents.length?"تم فصل "+parsedExamStudents.length+" طالبة. راجعي الأسماء والروايات قبل إنشاء القوائم.":"لم يتم فصل أي طالبة. تأكدي من ترقيم الأسطر أو وجود فاصل واضح بين الطالبتين.";
  if(!parsedExamStudents.length)$("studentIssues").innerHTML="";
@@ -592,8 +588,29 @@ function generateExamLists(){
  }catch(e){$("listGenerationStatus").className="status bad";$("listGenerationStatus").textContent=e.message;}
 }
 ["studentsInput","scheduleInput"].forEach(id=>$(id).addEventListener("focus",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};}));
-$("parseStudentsBtn").addEventListener("click",parseExamStudents);
-$("clearStudentsBtn").addEventListener("click",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};$("studentsInput").value="";parsedExamStudents=[];$("studentsStatus").textContent="";$("studentsStats").innerHTML="";$("studentsPreview").innerHTML="";$("studentIssues").innerHTML="";$("generatedLists").innerHTML="";$("listReview").innerHTML="";$("listGenerationStatus").textContent="";});
+async function syncParsedStudentsToExam(){
+ const examId=$("examSelect").value;
+ if(!examId){status("studentsStatus","احفظي بيانات الاختبار واختاريه أولًا قبل ربط القائمة بواجهة الطالبات.","warn");return;}
+ if(!parsedExamStudents.length)return;
+ const missing=parsedExamStudents.filter(x=>!x.student_number);
+ if(missing.length){status("studentsStatus","تم فصل الأسماء، لكن لم تُربط بواجهة الطالبات لأن "+missing.length+" طالبة بلا رقم. استخدمي الصيغة: رقم الطالبة | الاسم | الرواية.","warn");return;}
+ const seen=new Set(),duplicates=[];
+ for(const st of parsedExamStudents){if(seen.has(st.student_number))duplicates.push(st.student_number);seen.add(st.student_number);}
+ if(duplicates.length){status("studentsStatus","توجد أرقام مكررة في القائمة: "+[...new Set(duplicates)].join("، ")+" — راجعيها قبل الحفظ.","bad");return;}
+ try{
+   const students=parsedExamStudents.map(x=>({student_number:x.student_number,student_name:x.name,riwaya:/قالون/.test(x.riwayah)?"qalun":"hafs"}));
+   const result=await api("admin_import_students",{exam_id:examId,students});
+   status("studentsStatus","تم تحليل "+parsedExamStudents.length+" طالبة وربط القائمة نفسها بواجهة الطالبات. تم حفظ "+result.saved+" سجلًا.","ok");
+   await loadDashboard();
+ }catch(e){status("studentsStatus","تم التحليل لكن تعذر ربط القائمة بواجهة الطالبات: "+readable(e),"bad");}
+}
+$("parseStudentsBtn").addEventListener("click",async()=>{parseExamStudents();await syncParsedStudentsToExam();});
+$("toggleStudentNames").addEventListener("click",()=>{
+ const box=$("studentsPreview"),btn=$("toggleStudentNames"),show=box.classList.contains("hidden");
+ box.classList.toggle("hidden",!show);btn.setAttribute("aria-expanded",String(show));
+ btn.textContent=show?"🙈 إخفاء أسماء الطالبات":"👁️ إظهار أسماء الطالبات";
+});
+$("clearStudentsBtn").addEventListener("click",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};$("studentsInput").value="";parsedExamStudents=[];$("studentsStatus").textContent="";$("studentsStats").innerHTML="";$("studentsPreview").innerHTML="";$("studentsPreview").classList.add("hidden");$("toggleStudentNames").textContent="👁️ إظهار أسماء الطالبات";$("toggleStudentNames").setAttribute("aria-expanded","false");$("studentIssues").innerHTML="";$("generatedLists").innerHTML="";$("listReview").innerHTML="";$("listGenerationStatus").textContent="";});
 $("undoInputsBtn").addEventListener("click",()=>{if(!previousExamInputs){status("studentsStatus","لا يوجد تعديل سابق محفوظ للتراجع إليه.","bad");return;}$("studentsInput").value=previousExamInputs.students;$("scheduleInput").value=previousExamInputs.schedule;parseExamStudents();parseSchedule();});
 $("undoScheduleBtn").addEventListener("click",()=>{if(previousExamInputs){$("scheduleInput").value=previousExamInputs.schedule;parseSchedule();}else status("scheduleStatus","لا يوجد تعديل سابق محفوظ للتراجع إليه.","bad");});
 $("selectAllQalunBtn").addEventListener("click",()=>document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=true));
