@@ -59,6 +59,14 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 .generated-list h3{margin:0 0 8px;color:#71358b}
 .generated-list pre{white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;line-height:1.8;background:#faf7fb;padding:12px;border-radius:10px}
 
+
+.student-issue-dock{position:fixed;bottom:14px;left:0;right:0;z-index:50;display:flex;justify-content:center;pointer-events:none;padding:0 14px}
+.issue-fab{pointer-events:auto;display:flex;align-items:center;gap:9px;border:1px solid #d9c2e5;border-radius:999px;padding:10px 17px;background:#fff;color:#71358b;box-shadow:0 5px 20px #31134124;font:inherit;font-weight:700;cursor:pointer}
+.issue-fab-icon{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:50%;background:#71358b;color:#fff;font-weight:800}
+#studentIssueCard{position:fixed;z-index:49;left:14px;right:14px;bottom:72px;margin:0 auto;width:min(540px,calc(100% - 28px));max-height:calc(100dvh - 100px);overflow:auto;box-shadow:0 10px 35px #20102930}
+#studentIssueCard h2{margin-top:0}
+@media(min-width:700px){#studentIssueCard{left:24px;right:auto;bottom:76px;width:460px}}
+
 </style>
 </head>
 <body>
@@ -85,16 +93,19 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 </form>
 <div id="studentResult"></div>
 </div>
-<div class="card">
+<div class="student-issue-dock">
+<button type="button" id="toggleIssueForm" class="issue-fab" aria-expanded="false" aria-controls="studentIssueCard" title="الإبلاغ عن مشكلة"><span class="issue-fab-icon">!</span><span>الإبلاغ عن مشكلة</span></button>
+</div>
+<div class="card hidden" id="studentIssueCard">
 <h2>الإبلاغ عن مشكلة</h2>
-<p class="hint">لو واجهتك مشكلة في البحث أو التسجيل، اكتبي رقمك إن أمكن ووضّحي المشكلة.</p>
+<p class="hint">لو واجهتك مشكلة في البحث أو التسجيل، اكتبي رقمك ووضّحي المشكلة.</p>
 <form id="issueForm">
-<label for="issueStudentNumber">رقم الطالبة (اختياري)</label><input id="issueStudentNumber" maxlength="80">
+<label for="issueStudentNumber">رقم الطالبة</label><input id="issueStudentNumber" maxlength="80" inputmode="numeric" placeholder="اكتبي رقمك">
 <label for="issueName">الاسم (اختياري)</label><input id="issueName" maxlength="120">
 <label for="issueCategory">نوع المشكلة</label>
 <select id="issueCategory"><option value="lookup">البحث عن الطالبة</option><option value="registration">إتمام التسجيل</option><option value="teacher_choice">اختيار المعلمة</option><option value="schedule">المواعيد</option><option value="other">أخرى</option></select>
 <label for="issueMessage">تفاصيل المشكلة</label><textarea id="issueMessage" maxlength="1000" required placeholder="اكتبي المشكلة باختصار..."></textarea>
-<div class="actions"><button class="soft" type="submit">إرسال البلاغ</button></div>
+<div class="actions"><button class="soft" type="submit">إرسال البلاغ</button><button class="gray" type="button" id="closeIssueForm">إغلاق</button></div>
 </form>
 <div id="issueStatus" class="status"></div>
 </div>
@@ -342,6 +353,18 @@ $("lookupForm").addEventListener("submit",async e=>{
     });
   } catch(err) { $("studentResult").innerHTML='<div class="status show bad">'+safe(readable(err))+'</div>'; }
 });
+
+$("toggleIssueForm").addEventListener("click",()=>{
+ const card=$("studentIssueCard"),opening=card.classList.contains("hidden");
+ card.classList.toggle("hidden",!opening);
+ $("toggleIssueForm").setAttribute("aria-expanded",String(opening));
+ if(opening) $("issueStudentNumber").focus();
+});
+$("closeIssueForm").addEventListener("click",()=>{
+ $("studentIssueCard").classList.add("hidden");
+ $("toggleIssueForm").setAttribute("aria-expanded","false");
+});
+
 $("issueForm").addEventListener("submit",async e=>{
   e.preventDefault(); const message=$("issueMessage").value.trim();
   try {
