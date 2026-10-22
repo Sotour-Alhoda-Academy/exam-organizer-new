@@ -31,8 +31,8 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 .table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px;min-width:520px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}th{background:#faf6fc;color:var(--p)}
 .issue{border:1px solid #eadbb0;background:#fffaf0;border-radius:12px;padding:12px;margin-top:8px}.issue small{color:var(--muted)}
 .hidden{display:none!important}.divider{border:0;border-top:1px solid var(--line);margin:16px 0}
-.teacher-quick-actions{position:fixed;left:12px;bottom:22px;z-index:4000;display:flex;flex-direction:column;gap:8px;align-items:center}
-.teacher-quick-btn{width:44px;height:44px;min-width:44px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-size:19px;line-height:1;box-shadow:0 4px 14px #0003}
+.teacher-quick-actions{position:static;display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.teacher-quick-btn{min-height:40px;min-width:44px;padding:8px 12px;display:flex;align-items:center;justify-content:center;border-radius:10px;color:#fff;font-size:14px;line-height:1.3;box-shadow:0 2px 8px #0002}
 .teacher-quick-manage{background:#5f2877}.teacher-quick-add{background:#218653}
 .teacher-manager-modal{position:fixed;inset:0;z-index:5000;background:#0008;display:flex;align-items:center;justify-content:center;padding:14px}
 .teacher-manager-box{width:min(540px,100%);max-height:86vh;overflow:auto;background:#fff;border-radius:16px;padding:16px;box-shadow:0 14px 40px #0003}
@@ -43,10 +43,10 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 .teacher-manager-actions{display:flex;gap:6px;flex-shrink:0}
 .teacher-mini-btn{width:36px;height:36px;min-width:36px;padding:0;border-radius:9px;display:flex;align-items:center;justify-content:center}
 .teacher-mini-edit{background:#eee8f2;color:var(--p)}.teacher-mini-delete{background:#fdebed;color:#b42335}
-@media(max-width:560px){.teacher-quick-actions{left:9px;bottom:20px}.teacher-quick-btn{width:42px;height:42px;min-width:42px}.teacher-manager-row{align-items:flex-start}.teacher-manager-actions{gap:4px}} 
+@media(max-width:560px){.teacher-quick-btn{min-height:40px;min-width:42px}.teacher-manager-row{align-items:flex-start}.teacher-manager-actions{gap:4px}} 
 .schedule-preview-table{width:100%;border-collapse:collapse;min-width:360px}.schedule-preview-table th,.schedule-preview-table td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}.schedule-preview-table th{background:#f5f0f8;color:var(--p);font-weight:700}.schedule-issue{border:1px solid #f0c36d;background:#fff9e9;padding:10px;border-radius:10px;margin:8px 0}
 .teacher-quick-actions{position:fixed;left:12px;bottom:22px;z-index:4000;display:flex;flex-direction:column;gap:8px;align-items:center}.teacher-quick-btn{width:44px;height:44px;min-width:44px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-size:19px;line-height:1;box-shadow:0 4px 14px #0003}.teacher-quick-manage{background:#5f2877}.teacher-quick-add{background:#218653}
-.teacher-manager-modal{position:fixed;inset:0;z-index:5000;background:#0008;display:flex;align-items:center;justify-content:center;padding:14px}.teacher-manager-box{width:min(540px,100%);max-height:86vh;overflow:auto;background:#fff;border-radius:16px;padding:16px;box-shadow:0 14px 40px #0003}.teacher-manager-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.teacher-manager-head h3{margin:0;color:var(--p)}.teacher-manager-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--line);border-radius:11px;margin-top:8px}.teacher-manager-name{font-weight:bold;color:var(--p);min-width:0;overflow-wrap:anywhere}.teacher-manager-actions{display:flex;gap:6px;flex-shrink:0}.teacher-mini-btn{width:36px;height:36px;min-width:36px;padding:0;border-radius:9px;display:flex;align-items:center;justify-content:center}.teacher-mini-edit{background:#eee8f2;color:var(--p)}.teacher-mini-delete{background:#fdebed;color:#b42335}@media(max-width:560px){.teacher-quick-actions{left:9px;bottom:20px}.teacher-quick-btn{width:42px;height:42px;min-width:42px}.teacher-manager-row{align-items:flex-start}}footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 0 22px}
+.teacher-manager-modal{position:fixed;inset:0;z-index:5000;background:#0008;display:flex;align-items:center;justify-content:center;padding:14px}.teacher-manager-box{width:min(540px,100%);max-height:86vh;overflow:auto;background:#fff;border-radius:16px;padding:16px;box-shadow:0 14px 40px #0003}.teacher-manager-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.teacher-manager-head h3{margin:0;color:var(--p)}.teacher-manager-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--line);border-radius:11px;margin-top:8px}.teacher-manager-name{font-weight:bold;color:var(--p);min-width:0;overflow-wrap:anywhere}.teacher-manager-actions{display:flex;gap:6px;flex-shrink:0}.teacher-mini-btn{width:36px;height:36px;min-width:36px;padding:0;border-radius:9px;display:flex;align-items:center;justify-content:center}.teacher-mini-edit{background:#eee8f2;color:var(--p)}.teacher-mini-delete{background:#fdebed;color:#b42335}@media(max-width:560px){.teacher-quick-btn{min-height:40px;min-width:42px}.teacher-manager-row{align-items:flex-start}}footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 0 22px}
 @media(max-width:560px){.wrap{padding:10px}.card{padding:13px}.actions button{flex:1}.tabs .tab{min-width:0}.teacher-head{align-items:flex-start}}
 
 .optional-roster summary{cursor:pointer;font-weight:700;color:#71358b;padding:4px}.optional-roster .roster-inner{padding-top:12px}.duration-picker{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#faf7fb;border:1px solid #e5dbea;border-radius:12px;padding:12px;margin:12px 0}
@@ -124,7 +124,8 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 
 <div id="adminWorkspace" class="hidden">
 <div class="card">
-<div class="teacher-head"><h2>📝 بيانات الاختبار</h2><button id="logoutBtn" class="gray" type="button">تسجيل الخروج</button></div>
+<div class="teacher-head"><h2>📝 بيانات الاختبار</h2><div class="actions" style="margin:0"><button id="toggleExamForm" class="soft" type="button" aria-expanded="false" aria-controls="examFormPanel" title="إظهار أو إخفاء خانات بيانات الاختبار">⚙️</button><button id="logoutBtn" class="gray" type="button">تسجيل الخروج</button></div></div>
+<div id="examFormPanel" class="hidden">
 <form id="examForm">
 <input id="editExamId" type="hidden">
 <label for="examTitle">اسم الاختبار</label><input id="examTitle" maxlength="200" required placeholder="مثال: اختبار سورة النور">
@@ -140,6 +141,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div class="actions"><button class="primary" type="submit">حفظ الاختبار</button><button class="gray" type="button" id="newExamBtn">اختبار جديد</button></div>
 </form>
 <div id="examFormStatus" class="status"></div>
+</div>
 <div id="adminStatus" class="status"></div>
 <label for="examSelect">الاختبار الحالي</label>
 <select id="examSelect"><option value="">لا توجد اختبارات</option></select>
@@ -200,7 +202,10 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 
 <div class="card">
 <h2>👩‍🏫 إدارة المعلمات</h2>
-<p class="hint">بيانات المعلمات محفوظة. استخدمي الأيقونتين على الشمال للإضافة أو التعديل والحذف، ولن تحتاجي إلى إدخال بياناتهن من جديد.</p>
+<div id="teacherQuickActions" class="teacher-quick-actions" aria-label="إدارة المعلمات">
+  <button type="button" id="quickManageTeachers" class="teacher-quick-btn teacher-quick-manage" title="إدارة المعلمات: تعديل البيانات أو حذف معلمة" aria-label="إدارة المعلمات: تعديل البيانات أو حذف معلمة">✏️ إدارة المعلمات</button>
+  <button type="button" id="quickAddTeacher" class="teacher-quick-btn teacher-quick-add" title="إضافة معلمة جديدة" aria-label="إضافة معلمة جديدة">＋ إضافة معلمة</button>
+</div>
 <div id="teacherCountStatus" class="status show info"></div>
 </div>
 <div class="card">
@@ -209,10 +214,6 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 </div>
 <div class="card"><h2>📨 البلاغات والشكاوى</h2><div id="issuesList"></div></div>
 
-<div id="teacherQuickActions" class="teacher-quick-actions hidden" aria-label="إدارة المعلمات">
-  <button type="button" id="quickManageTeachers" class="teacher-quick-btn teacher-quick-manage" title="إدارة المعلمات: تعديل البيانات أو حذف معلمة" aria-label="إدارة المعلمات: تعديل البيانات أو حذف معلمة">✏️ إدارة المعلمات</button>
-  <button type="button" id="quickAddTeacher" class="teacher-quick-btn teacher-quick-add" title="إضافة معلمة جديدة" aria-label="إضافة معلمة جديدة">＋ إضافة معلمة</button>
-</div>
 <div id="teacherEditorModal" class="teacher-manager-modal hidden" role="dialog" aria-modal="true" aria-labelledby="teacherEditorTitle">
   <div class="teacher-manager-box">
     <div class="teacher-manager-head"><h3 id="teacherEditorTitle">إضافة معلمة</h3><button type="button" id="closeTeacherEditor" class="gray" aria-label="إغلاق">✕</button></div>
@@ -377,7 +378,8 @@ $("examSelect").addEventListener("change",async()=>{
   await loadDashboard();
   await renderTeachers();
 });
-$("newExamBtn").addEventListener("click",()=>{ $("examForm").reset(); $("editExamId").value=""; $("examDuration").value="5"; $("examStatus").value="draft"; $("registrationState").value="closed"; clearStatus("examFormStatus"); });
+$("toggleExamForm").addEventListener("click",()=>{const panel=$("examFormPanel"),show=panel.classList.contains("hidden");panel.classList.toggle("hidden",!show);$("toggleExamForm").setAttribute("aria-expanded",String(show));});
+$("newExamBtn").addEventListener("click",()=>{$("examFormPanel").classList.remove("hidden");$("toggleExamForm").setAttribute("aria-expanded","true"); $("examForm").reset(); $("editExamId").value=""; $("examDuration").value="5"; $("examStatus").value="draft"; $("registrationState").value="closed"; clearStatus("examFormStatus"); });
 function fillExamForm(x) {
   $("editExamId").value=x.id; $("examTitle").value=x.title||""; $("examDate").value=x.exam_date||"";
   $("examDuration").value=String(x.default_duration_minutes||5); $("examStatus").value=x.status||"draft";
