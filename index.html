@@ -455,6 +455,127 @@ function renderTeacherManager(){
 async function renderTeachers() {
   $("teacherCountStatus").textContent="عدد المعلمات المحفوظات: "+teachers.length;
 }
+
+let parsedSchedule=[],scheduleIssues=[];
+function scheduleNorm(s){
+  return String(s||"").normalize("NFKC").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي")
+    .replace(/[ًٌٍَُِّْـ]/g,"").replace(/\s+/g," ").trim().toLowerCase();
+}
+function scheduleDigits(s){return String(s||"").replace(/[٠-٩]/g,x=>"٠١٢٣٤٥٦٧٨٩".indexOf(x));}
+function matchScheduleTeacher(line){
+  const n=scheduleNorm(line);
+  const active=teachers.filter(t=>t.is_active!==false).map(t=>({...t,name:t.full_name||t.name||""}));
+  const exact=active.filter(t=>n.includes(scheduleNorm(t.name))).sort((a,b)=>scheduleNorm(b.name).length-scheduleNorm(a.name).length);
+  if(exact.length)return exact[0];
+  let pref=[],longest=1;
+  for(const t of active){
+    const parts=scheduleNorm(t.name).split(" ").filter(Boolean);
+    for(let count=2;count<=parts.length;count++){
+      if(n.includes(parts.slice(0,count).join(" "))){
+        if(count>longest){longest=count;pref=[t];}
+        else if(count===longest&&!pref.some(x=>x.id===t.id))pref.push(t);
+      }
+    }
+  }
+  if(pref.length===1)return pref[0];
+  if(pref.length>1)return {ambiguous:true,names:pref.map(t=>t.name)};
+  const first=active.filter(t=>{
+    const f=scheduleNorm(t.name).split(" ")[0];
+    return f && new RegExp("(^|\\s|[-–—])"+f+"($|\\s|[-–—])").test(n);
+  });
+  if(first.length===1)return first[0];
+  if(first.length>1)return {ambiguous:true,names:first.map(t=>t.name)};
+  return null;
+}
+function schedulePeriod(text){
+  let raw=scheduleDigits(String(text||"").replace(/[ًٌٍَُِّْ]/g,"").replace(/[٫٬]/g,".").replace(/(\d)\s*[،,]\s*(\d{1,2})/g,"$1.$2"));
+  raw=raw.replace(/(\d{1,2})\s*و\s*(?:نص|نصف)/g,"$1.30").replace(/(\d{1,2})\s*(?:ونص|ونصف)/g,"$1.30");
+  const suffix="صباح(?:ا|ً)?|ص|am|مساء(?:ا|ً)?|م|ظهر|ظ|عصر|ع|ليل|ل|pm";
+  const num="\\d{1,2}(?:\\s*[.:]\\s*\\d{1,2})?";
+  const range=new RegExp("("+num+")\\s*("+suffix+")?\\s*(?:إلى|الى|الي|حتى|من|[-–—]|\\.{1,2}|:)\\s*("+num+")\\s*("+suffix+")?","i");
+  let m=raw.match(range);
+  function toMin(v,p){
+    const mm=String(v).replace(/\s/g,"").replace(/:/g,".").match(/^(\d{1,2})(?:\.(\d{1,2}))?$/);
+    if(!mm)return null;
+    let h=+mm[1],mi=mm[2]?(mm[2]==="5"?30:+mm[2]):0;
+    const k=String(p||"").toLowerCase();
+    if(/^(م|مساء|مساءا|ظهر|ظ|عصر|ع|ليل|ل|pm)$/.test(k)&&h<12)h+=12;
+    if(/^(ص|صباح|صباحا|am)$/.test(k)&&h===12)h=0;
+    if(h>23||mi>59)return null;
+    return h*60+mi;
+  }
+  if(m){
+    let p1=m[2]||m[4]||"",p2=m[4]||p1;
+    let start=toMin(m[1],p1),end=toMin(m[3],p2);
+    if(start!==null&&end!==null){
+      if(end<=start&&m[4]&&!m[2]&&/^(م|مساء|مساءا|pm)$/.test(m[4].toLowerCase())&&start<720)start=toMin(m[1],"ص");
+      if(end<=start)end+=1440;
+      return {start,end};
+    }
+  }
+  const one=new RegExp("("+num+")\\s*("+suffix+")?","i").exec(raw);
+  if(one){
+    const start=toMin(one[1],one[2]||"");
+    if(start!==null)return {start,end:start+60};
+  }
+  return null;
+}
+function scheduleFmt(min){
+  min=((min%1440)+1440)%1440;
+  const h=Math.floor(min/60),m=min%60;
+  return String(h%12||12).padStart(2,"0")+":"+String(m).padStart(2,"0")+" "+(h>=12?"م":"ص");
+}
+function scheduleClock(min){
+  min=((min%1440)+1440)%1440;
+  return String(Math.floor(min/60)).padStart(2,"0")+":"+String(min%60).padStart(2,"0");
+}
+function parseSchedule(){
+  parsedSchedule=[];scheduleIssues=[];
+  const lines=$("scheduleInput").value.split(/\r?\n/).map(x=>x.trim());let started=false;
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];if(!line)continue;
+    if(/^[\(（]?\s*[0-9٠-٩]+\s*[\)）]?\s*[-_./\\:：]*\s*$/.test(line))continue;
+    const t=matchScheduleTeacher(line);
+    let period=schedulePeriod(line),consumed=false;
+    if(t&&!t.ambiguous&&!period&&i+1<lines.length&&!matchScheduleTeacher(lines[i+1])){
+      period=schedulePeriod(lines[i+1]);if(period)consumed=true;
+    }
+    if(!started){if(!t||!period||t.ambiguous)continue;started=true;}
+    if(!t){if(/[0-9٠-٩]/.test(line))scheduleIssues.push({line:i,text:line,reason:"يوجد وقت في السطر لكن لم أتعرف على اسم المعلمة."});continue;}
+    if(t.ambiguous){scheduleIssues.push({line:i,text:line,reason:"الاسم المختصر يطابق أكثر من معلمة: "+t.names.join("، ")});continue;}
+    if(!period){scheduleIssues.push({line:i,text:line,reason:"تعرفت على المعلمة لكن لم أستطع تحديد وقتها."});continue;}
+    let start=period.start,end=period.end;if(end-start<60)end=start+60;if(end-start>120)end=start+120;
+    parsedSchedule.push({teacherId:t.id,teacherName:t.name,start,end,sourceLine:line});
+    if(consumed)i++;
+  }
+  renderParsedSchedule();
+}
+function renderParsedSchedule(){
+  const unique=new Set(parsedSchedule.map(x=>x.teacherId)),total=parsedSchedule.reduce((a,x)=>a+x.end-x.start,0),duration=Number($("examDuration").value)||5;
+  $("scheduleStats").innerHTML=parsedSchedule.length?'<div class="stat"><b>'+parsedSchedule.length+'</b> موعد مقروء</div><div class="stat"><b>'+unique.size+'</b> معلمة</div><div class="stat"><b>'+Math.floor(total/60)+'س '+(total%60?total%60+'د':'')+'</b> إجمالي الوقت</div><div class="stat"><b>'+parsedSchedule.reduce((a,x)=>a+Math.floor((x.end-x.start)/duration),0)+'</b> سعة تقريبية</div>':'';
+  $("scheduleIssues").innerHTML=scheduleIssues.length?'<div class="review"><b>سطور تحتاج مراجعة</b>'+scheduleIssues.map(x=>'<div class="schedule-issue"><b>السطر '+(x.line+1)+'</b><div>'+safe(x.text)+'</div><div class="hint">'+safe(x.reason)+'</div></div>').join('')+'</div>':'';
+  $("schedulePreview").innerHTML=parsedSchedule.length?'<table class="schedule-preview-table"><thead><tr><th>المعلمة</th><th>من</th><th>إلى</th><th>السعة</th></tr></thead><tbody>'+parsedSchedule.map(x=>'<tr><td>'+safe(x.teacherName)+'</td><td>'+scheduleFmt(x.start)+'</td><td>'+scheduleFmt(x.end)+'</td><td>'+Math.floor((x.end-x.start)/duration)+'</td></tr>').join('')+'</tbody></table>':'';
+  $("saveScheduleBtn").disabled=!parsedSchedule.length||!$("examSelect").value;
+  if(!parsedSchedule.length)status("scheduleStatus","لم أتعرف على أي موعد صالح. تأكدي أن أسماء المعلمات موجودة في قائمة المعلمات المحفوظة.","bad");
+  else if(scheduleIssues.length)status("scheduleStatus","تم تحليل "+parsedSchedule.length+" موعد، لكن هناك "+scheduleIssues.length+" سطر يحتاج مراجعة قبل الحفظ.","warn");
+  else status("scheduleStatus","تم تحليل المواعيد بنجاح. راجعي الجدول ثم احفظي مواعيد الاختبار.","ok");
+}
+$("parseScheduleBtn").addEventListener("click",parseSchedule);
+$("clearScheduleBtn").addEventListener("click",()=>{$("scheduleInput").value="";parsedSchedule=[];scheduleIssues=[];$("scheduleStats").innerHTML="";$("schedulePreview").innerHTML="";$("scheduleIssues").innerHTML="";$("saveScheduleBtn").disabled=true;$("scheduleStatus").className="status";$("scheduleStatus").textContent="";});
+$("saveScheduleBtn").addEventListener("click",async()=>{
+  const examId=$("examSelect").value;if(!examId){status("scheduleStatus","احفظي بيانات الاختبار أولًا ثم اختاريه من قائمة الاختبارات.","bad");return;}if(!parsedSchedule.length)return;
+  const btn=$("saveScheduleBtn");btn.disabled=true;btn.textContent="جارٍ حفظ المواعيد...";
+  try{
+    const grouped=new Map();for(const slot of parsedSchedule){const current=grouped.get(slot.teacherId);if(!current)grouped.set(slot.teacherId,{...slot});else{current.start=Math.min(current.start,slot.start);current.end=Math.max(current.end,slot.end);current.sourceLine+=" / "+slot.sourceLine;}}
+    const duration=Number($("examDuration").value)===10?10:5;
+    for(const slot of grouped.values()){
+      await api("admin_save_teacher_settings",{exam_id:examId,teacher_id:slot.teacherId,is_available:true,accepts_qalun:true,start_time:scheduleClock(slot.start),end_time:scheduleClock(slot.end),capacity:Math.max(0,Math.floor((slot.end-slot.start)/duration)),capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:("مستخرج تلقائيًا من رسالة المواعيد: "+slot.sourceLine).slice(0,1000)});
+    }
+    await loadDashboard();status("scheduleStatus","تم حفظ مواعيد "+grouped.size+" معلمة في الاختبار الحالي. سعة كل معلمة محسوبة تلقائيًا.","ok");status("adminStatus","تم حفظ بيانات الاختبار ومواعيد المعلمات.","ok");
+  }catch(err){status("scheduleStatus",readable(err),"bad");}
+  finally{btn.disabled=!parsedSchedule.length;btn.textContent="💾 حفظ مواعيد الاختبار";}
+});
+
 async function loadAdminPublicRefresh(){await loadPublicExam();}
 await loadPublicExam();
 await refreshSession();
