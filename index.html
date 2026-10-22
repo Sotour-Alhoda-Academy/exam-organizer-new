@@ -192,6 +192,8 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div class="actions"><button type="button" id="selectAllQalunBtn" class="green">☑ اختيار الكل</button><button type="button" id="clearQalunBtn" class="gray">إلغاء الكل</button><button type="button" id="saveQalunBtn" class="primary">💾 حفظ اختيار معلمات قالون</button></div>
 </div>
 
+<div class="card" id="saveAllWorkspaceCard"><h2>💾 حفظ الاختبار وإتاحته للطالبات</h2><p class="hint">يحفظ قائمة الطالبات ورسالة المواعيد واختيارات قالون ومواعيد المعلمات وإعدادات القوائم، ثم ينشر الاختبار للطالبات.</p><div class="actions"><button type="button" id="saveAllWorkspaceBtn" class="green">💾 حفظ كل البيانات ونشر الاختبار</button></div><div id="saveAllWorkspaceStatus" class="status"></div></div>
+
 <div class="card" id="guide-generate">
 <h2>⚙️ 5) إنشاء القوائم</h2>
 <p class="hint">اختاري مدة اختبار كل طالبة في هذا الاختبار. الافتراضي 5 دقائق، ويمكن اختيار 10 دقائق عند الحاجة.</p>
@@ -214,7 +216,6 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div id="registrationsTable" class="table-wrap"></div>
 </div>
 <div class="card"><h2>📨 البلاغات والشكاوى</h2><div id="issuesList"></div></div>
-<div class="card" id="saveAllWorkspaceCard"><h2>💾 حفظ الاختبار وإتاحته للطالبات</h2><p class="hint">يحفظ قائمة الطالبات ورسالة المواعيد واختيارات قالون ومواعيد المعلمات وإعدادات القوائم، ثم ينشر الاختبار للطالبات.</p><div class="actions"><button type="button" id="saveAllWorkspaceBtn" class="green">💾 حفظ كل البيانات ونشر الاختبار</button></div><div id="saveAllWorkspaceStatus" class="status"></div></div>
 
 <div id="teacherEditorModal" class="teacher-manager-modal hidden" role="dialog" aria-modal="true" aria-labelledby="teacherEditorTitle">
   <div class="teacher-manager-box">
@@ -256,6 +257,7 @@ const ADMIN_EMAIL = "saramoomen01020127827@gmail.com";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
 const $ = (id) => document.getElementById(id);
 let currentExam = null, foundStudent = null, publicTeachers = [], publicExams = [], selectedPublicExamId = "", exams = [], teachers = [], dashboard = null;
+let publicExamLoadSeq = 0, adminDashboardLoadSeq = 0;
 let accessToken = null;
 const activeStatuses = ["registered","confirmed","needs_review"];
 
@@ -314,8 +316,10 @@ function capacityLabel(t) {
   return t.remaining > 0 ? "متاح " + t.remaining + " مكان" : "اكتملت السعة";
 }
 async function loadPublicExam(requestedExamId=selectedPublicExamId) {
+  const loadSeq = ++publicExamLoadSeq;
   try {
     const listData = await api("public_exams",{},false);
+    if (loadSeq !== publicExamLoadSeq) return;
     publicExams = listData.exams || [];
     if (!publicExams.length) {
       currentExam=null; publicTeachers=[];
@@ -330,6 +334,7 @@ async function loadPublicExam(requestedExamId=selectedPublicExamId) {
     $("publicExamPicker").innerHTML=publicExams.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+(x.exam_date?' · '+safe(x.exam_date):'')+'</option>').join("");
     $("publicExamPicker").value=selectedPublicExamId;
     const data = await api("public_exam",{exam_id:selectedPublicExamId},false);
+    if (loadSeq !== publicExamLoadSeq) return;
     currentExam=data.exam; publicTeachers=data.teachers||[];
     $("studentResult").innerHTML="";
     if (!currentExam) {
@@ -433,13 +438,17 @@ async function loadAdmin() {
   } catch(e) { status("adminStatus",readable(e),"bad"); if(["ADMIN_AUTH_INVALID","ADMIN_AUTH_REQUIRED"].includes(e.message)){await supabase.auth.signOut();await refreshSession();} }
 }
 async function loadDashboard() {
+  const loadSeq = ++adminDashboardLoadSeq;
   const examId=$("examSelect").value;
   if(!examId){$("dashboardStats").innerHTML="";$("registrationsTable").innerHTML='<p class="hint">أنشئي اختبارًا أولًا.</p>';$("issuesList").innerHTML="";dashboard=null;return;}
   try {
-    dashboard=await api("admin_dashboard",{exam_id:examId});
+    const dashboardData=await api("admin_dashboard",{exam_id:examId});
+    if(loadSeq!==adminDashboardLoadSeq || examId!==$("examSelect").value) return;
+    dashboard=dashboardData;
     if(workspaceLoadedExamId!==examId){
       workspaceLoadedExamId=examId;
       const workspaceResult=await api("admin_get_workspace",{exam_id:examId});
+      if(loadSeq!==adminDashboardLoadSeq || examId!==$("examSelect").value) return;
       const workspace=workspaceResult.workspace;
       const savedStudents=(dashboard.students||[]).filter(s=>s.is_eligible!==false&&s.student_number&&s.student_name);
       const settings=dashboard.teacherSettings||[];
@@ -952,6 +961,9 @@ $("saveScheduleBtn").addEventListener("click",async()=>{
 
 async function saveAllExamWorkspace(){
  const btn=$("saveAllWorkspaceBtn");btn.disabled=true;btn.textContent="جارٍ حفظ كل البيانات...";
+ const lockedControls=[...document.querySelectorAll("#examSelect,#newExamBtn,#examTitle,#examDate,#examDuration,#registrationState,#examInstructions,#studentsInput,#scheduleInput,input[name=\"listDuration\"],.examQalunCheck")];
+ const previousDisabled=lockedControls.map(el=>el.disabled);
+ lockedControls.forEach(el=>el.disabled=true);
  try{
   parseExamStudents();parseSchedule();
   if(!parsedExamStudents.length)throw new Error("الصقي قائمة الطالبات واضغطي «فصل الطالبات» أولًا.");
@@ -983,7 +995,7 @@ async function saveAllExamWorkspace(){
   status("saveAllWorkspaceStatus","تم حفظ كل البيانات وقائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون، ونُشر الاختبار للطالبات. حالة التسجيل الحالية: "+({"open":"مفتوح","closed":"مغلق","paused":"متوقف مؤقتًا"}[finalExam.registration_state]||finalExam.registration_state)+".","ok");
   status("adminStatus","تم حفظ إعدادات الاختبار ونشره. يمكنك اختيار أي اختبار من قائمة «الاختبار الحالي».","ok");
  }catch(e){status("saveAllWorkspaceStatus",readable(e),"bad");}
- finally{btn.disabled=false;btn.textContent="💾 حفظ كل البيانات ونشر الاختبار";}
+ finally{lockedControls.forEach((el,i)=>{if(el.isConnected)el.disabled=previousDisabled[i];});btn.disabled=false;btn.textContent="💾 حفظ كل البيانات ونشر الاختبار";}
 }
 $("saveAllWorkspaceBtn").addEventListener("click",saveAllExamWorkspace);
 
