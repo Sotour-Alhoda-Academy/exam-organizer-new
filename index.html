@@ -573,12 +573,18 @@ $("saveScheduleBtn").addEventListener("click",async()=>{
   const examId=$("examSelect").value;if(!examId){status("scheduleStatus","احفظي بيانات الاختبار أولًا ثم اختاريه من قائمة الاختبارات.","bad");return;}if(!parsedSchedule.length)return;
   const btn=$("saveScheduleBtn");btn.disabled=true;btn.textContent="جارٍ حفظ المواعيد...";
   try{
+    if(scheduleIssues.length&&!confirm("فيه "+scheduleIssues.length+" سطر محتاج مراجعة. لو حفظتي الآن، المعلمات اللي لم يتم التعرف عليهن لن تُدرج مواعيدهن. هل تريدين الاستمرار؟"))return;
     const grouped=new Map();for(const slot of parsedSchedule){const current=grouped.get(slot.teacherId);if(!current)grouped.set(slot.teacherId,{...slot});else{current.start=Math.min(current.start,slot.start);current.end=Math.max(current.end,slot.end);current.sourceLine+=" / "+slot.sourceLine;}}
     const duration=Number($("examDuration").value)===10?10:5;
-    for(const slot of grouped.values()){
-      await api("admin_save_teacher_settings",{exam_id:examId,teacher_id:slot.teacherId,is_available:true,accepts_qalun:true,start_time:scheduleClock(slot.start),end_time:scheduleClock(slot.end),capacity:Math.max(0,Math.floor((slot.end-slot.start)/duration)),capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:("مستخرج تلقائيًا من رسالة المواعيد: "+slot.sourceLine).slice(0,1000)});
+    for(const teacher of teachers.filter(t=>t.is_active!==false)){
+      const slot=grouped.get(teacher.id);
+      if(slot){
+        await api("admin_save_teacher_settings",{exam_id:examId,teacher_id:teacher.id,is_available:true,accepts_qalun:true,start_time:scheduleClock(slot.start),end_time:scheduleClock(slot.end),capacity:Math.max(0,Math.floor((slot.end-slot.start)/duration)),capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:("مستخرج تلقائيًا من رسالة المواعيد: "+slot.sourceLine).slice(0,1000)});
+      }else{
+        await api("admin_save_teacher_settings",{exam_id:examId,teacher_id:teacher.id,is_available:false,accepts_qalun:false,start_time:null,end_time:null,capacity:0,capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:"لم تظهر هذه المعلمة في رسالة مواعيد الاختبار."});
+      }
     }
-    await loadDashboard();status("scheduleStatus","تم حفظ مواعيد "+grouped.size+" معلمة في الاختبار الحالي. سعة كل معلمة محسوبة تلقائيًا.","ok");status("adminStatus","تم حفظ بيانات الاختبار ومواعيد المعلمات.","ok");
+    await loadDashboard();status("scheduleStatus","تم حفظ المواعيد لـ "+grouped.size+" معلمة، واستبعاد "+(teachers.filter(t=>t.is_active!==false).length-grouped.size)+" معلمة غير مذكورة في الرسالة. السعة محسوبة تلقائيًا.","ok");status("adminStatus","تم حفظ بيانات الاختبار ومواعيد المعلمات.","ok");
   }catch(err){status("scheduleStatus",readable(err),"bad");}
   finally{btn.disabled=!parsedSchedule.length;btn.textContent="💾 حفظ مواعيد الاختبار";}
 });
