@@ -656,39 +656,176 @@ function matchScheduleTeacher(line){
   if(min<=1&&best.length>1)return {ambiguous:true,names:best.map(t=>t.name)};
   return null;
 }
+function meridiemKind(p){
+  p=String(p||"").toLowerCase().replace(/[ًٌٍَُِّْ]/g,"").trim();
+  if(!p)return "";
+  if(/^(ص|صباح|صباحا|am)$/.test(p))return "am";
+  /* ظ/ظهر/ع/عصر/م/مساء/ل/ليل كلها تُعامل كمساء */
+  if(/^(م|مساء|مساءا|ظ|ظهرا|ظهر|ع|عصرا|عصر|ز|ليلا|ليل|pm)$/.test(p))return "pm";
+  return "";
+}
+function timeToMin(v,p){
+  v=scheduleDigits(String(v||"")).trim();
+  let m=v.match(/^(\d{1,2})(?:\.(\d{1,2}))?$/);
+  if(!m)return null;
+  let h=+m[1],mi=m[2]?((m[2]==="5")?30:+m[2]):0;
+  let k=meridiemKind(p);
+  if(k==="pm"&&h<12)h+=12;
+  if(k==="am"&&h===12)h=0;
+  if(h>23||mi>59)return null;
+  return h*60+mi;
+}
+function oldScheduleFmt(x){
+  x=((x%1440)+1440)%1440;let h=Math.floor(x/60),m=x%60,s=h>=12?"م":"ص",hh=h%12||12;
+  return String(hh).padStart(2,"0")+":"+String(m).padStart(2,"0")+" "+s;
+}
 function schedulePeriod(text){
-  let raw=scheduleDigits(String(text||"").replace(/[ًٌٍَُِّْ]/g,"").replace(/[٫٬]/g,".").replace(/(\d)\s*[،,]\s*(\d{1,2})/g,"$1.$2"));
-  raw=raw.replace(/(\d{1,2})\s*و\s*(?:نص|نصف)/g,"$1.30").replace(/(\d{1,2})\s*(?:ونص|ونصف)/g,"$1.30");
-  const suffix="صباح(?:ا|ً)?|ص|am|مساء(?:ا|ً)?|م|ظهر|ظ|عصر|ع|ليل|ل|pm";
-  const num="\\d{1,2}(?:\\s*[.:]\\s*\\d{1,2})?";
-  const range=new RegExp("("+num+")\\s*("+suffix+")?\\s*(?:إلى|الى|الي|حتى|من|[-–—]|\\.{1,2}|:)\\s*("+num+")\\s*("+suffix+")?","i");
-  let m=raw.match(range);
-  function toMin(v,p){
-    const mm=String(v).replace(/\s/g,"").replace(/:/g,".").match(/^(\d{1,2})(?:\.(\d{1,2}))?$/);
-    if(!mm)return null;
-    let h=+mm[1],mi=mm[2]?(mm[2]==="5"?30:+mm[2]):0;
-    const k=String(p||"").toLowerCase();
-    if(/^(م|مساء|مساءا|ظهر|ظ|عصر|ع|ليل|ل|pm)$/.test(k)&&h<12)h+=12;
-    if(/^(ص|صباح|صباحا|am)$/.test(k)&&h===12)h=0;
-    if(h>23||mi>59)return null;
-    return h*60+mi;
-  }
-  if(m){
-    let p1=m[2]||m[4]||"",p2=m[4]||p1;
-    let start=toMin(m[1],p1),end=toMin(m[3],p2);
-    if(start!==null&&end!==null){
-      if(end<=start&&m[4]&&!m[2]&&/^(م|مساء|مساءا|pm)$/.test(m[4].toLowerCase())&&start<720)start=toMin(m[1],"ص");
-      if(end<=start)end+=1440;
-      return {start,end};
+  /*
+    قواعد المواعيد:
+    - رقم واحد مثل 9 = من 9 إلى 10.
+    - 9.30 = 9:30 (نصف ساعة)، وكذلك ٩٫٣٠.
+    - وجود : بين رقمين في رسائل المعلمات يعني مدى زمني: 8:10 = 8 إلى 10، وليس 8:10 دقيقة.
+    - 9 : 10 ص = 9 إلى 10 صباحًا.
+    - 5 إلى 6 م = 5 إلى 6 مساءً.
+    - ص = صباحًا.
+    - م/ظ/ع/ز/ظهر/عصر/مساء/ليل/PM = مساءً.
+  */
+  let raw=String(text||"")
+    .replace(/[ًٌٍَُِّْ]/g,"")
+    .replace(/(\d)\s*[،,]\s*(\d{1,2})(?=\s*(?:صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm|$))/gi,"$1.$2")
+    .replace(/[،,]/g," ")
+    .replace(/[٫٬]/g,".")
+    .replace(/[–—−]/g,"-")
+    .replace(/[–—−]/g,"-")
+    .trim();
+  raw=scheduleDigits(raw);
+  /* مدى مباشر بالنقطة أو النقطتين: 8.10 / ٨.١٠ / 8..10 / ٨..١٠ */
+  const dotRange=/(?:^|\s)(\d{1,2})\s*\.\s*\.?\s*(\d{1,2})\s*(صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)?(?=\s*$)/i;
+  let dr=raw.match(dotRange);
+  if(dr && dr[2]!=="00" && dr[2]!=="30"){
+    let ds=dr[3]||"";
+    let da=timeToMin(dr[1],ds), db=timeToMin(dr[2],ds);
+    if(da!==null&&db!==null){
+      if(db<=da && ds && meridiemKind(ds)==="pm" && +dr[1]<12) da=timeToMin(dr[1],"ص");
+      if(db<=da) db+=1440;
+      return {start:da,end:db,explicit:true};
     }
   }
-  const one=new RegExp("("+num+")\\s*("+suffix+")?","i").exec(raw);
-  if(one){
-    const start=toMin(one[1],one[2]||"");
-    if(start!==null)return {start,end:start+60};
+  /* المدى بالنقطة: 8.10 أو ٨.١٠ = من 8 إلى 10، وكذلك 8..10. */
+  raw=raw.replace(/(\d{1,2})\s*\.\s*\.\s*(\d{1,2})/g,"$1-$2");
+  raw=raw.replace(/\b(\d{1,2})\s*\.\s*(\d{1,2})(?=\s*(?:صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm|$))/gi,(m,a,b)=>((b==="00"||b==="30")?m:(a+"-"+b)));
+  /* 11.5 بعد النقطتين تعني 11:30، مثل 10:11.5 و ١٠:١١.٥. */
+  raw=raw.replace(/(\d{1,2})\s*:\s*(\d{1,2})\s*\.\s*5/g,"$1:$2.30");
+  /* صيغ شائعة مثل ٩ ونص / ١٠ونصف / ٨ و نصف تعني :30. */
+  raw=raw.replace(/(\d{1,2})\s*و\s*(?:نص|نصف)/g,"$1.30");
+  /* صيغ الساعة والنصف المكتوبة متصلة: 3.30 عصرا / ٣.٣٠عصرا / 3.30م */
+  raw=raw.replace(/(\d{1,2})\s*[.٫]\s*30(?=\s*(?:صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)\b)/gi,"$1.30");
+
+  const P="(?:صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)";
+  const NUM="(\\d{1,2}(?:\\s*\\.\\s*(?:00|30))?)";
+
+  /* أولًا: المدى المكتوب بالنقطتين أو إلى/حتى/الشرطة.
+     النقطتان هنا مقصودهما 9:10 = 9 إلى 10، لا 9:10 دقيقة. */
+    /* 11:30 و10:00 = وقت بالساعة والدقائق. أما 9:10 و8:10 فمدى زمني. */
+  const clockColon=/\b(\d{1,2})\s*:\s*(00|30)\s*(صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)?\b/i;
+  let cm=raw.match(clockColon);
+  if(cm){
+    let a=timeToMin(cm[1]+"."+cm[2],cm[3]||"");
+    if(a!==null)return {start:a,end:a+60,explicit:false};
+  }
+
+const COLONNUM="(\\d{1,2}(?:\\s*[.\\u066b]\\s*(?:00|30|[0-5]?\\d))?)";
+       const colonHalfRange=/\b(\d{1,2})\s*:\s*(\d{1,2})\s*\.\s*5\s*(صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)?\b/i;
+  let ch=raw.match(colonHalfRange);
+  if(ch){
+    let suffix=ch[3]||"";
+    let a=timeToMin(ch[1],suffix);
+    let b=timeToMin(ch[2]+".30",suffix);
+    if(a!==null&&b!==null){
+      if(b<=a && suffix && meridiemKind(suffix)==="pm" && +ch[1]<12) a=timeToMin(ch[1],"ص");
+      if(b<=a)b+=1440;
+      return {start:a,end:b,explicit:true};
+    }
+  }
+
+const colonRange=new RegExp(COLONNUM+"\\s*:\\s*"+COLONNUM+"\\s*("+P+")?","i");
+  let m=raw.match(colonRange);
+  if(m){
+    let suffix=m[3]||"";
+    /* إذا كانت الدلالة مكتوبة مرة واحدة بعد المدى، فهي للوقتَين معًا. */
+    let a=timeToMin(m[1].replace(/\s/g,""),suffix);
+    let b=timeToMin(m[2].replace(/\s/g,""),suffix);
+    if(a!==null&&b!==null){
+      /* حالة مثل 10:8 م: إذا كان وقت البداية بلا دلالة والـPM عند النهاية،
+         فالأقرب المقصود 10 صباحًا إلى 8 مساءً، لا 10 مساءً إلى 8 مساءً في اليوم التالي. */
+      if(b<=a && suffix && meridiemKind(suffix)==="pm" && !m[1].includes("ص")){
+        let rawA=+m[1].replace(/\s/g,"").split(".")[0];
+        let amStart=timeToMin(String(rawA),"ص");
+        if(amStart!==null && b>amStart){a=amStart;}
+      }
+      if(b<=a)b+=1440;
+      return {start:a,end:b,explicit:true};
+    }
+  }
+
+  const rangeRe=new RegExp(
+    NUM+"\\s*("+P+")?\\s*(?:إلى|الى|الي|حتى|من|ل|-)\\s*"+
+    NUM+"\\s*("+P+")?","i"
+  );
+  m=raw.match(rangeRe);
+  if(m){
+    let p1=m[2]||"",p2=m[4]||p1;
+    /* إذا كانت الدلالة موجودة بعد النهاية فقط مثل 5 إلى 6 عصرا،
+       فهي تخص البداية والنهاية معًا. */
+    if(!m[2] && m[4])p1=m[4];
+    let a=timeToMin(m[1].replace(/\s/g,""),p1);
+    let b=timeToMin(m[3].replace(/\s/g,""),p2);
+    if(a!==null&&b!==null){
+      if(b<=a){
+        /* لو كتب 10 - 8 م فالمقصود عادة 10 صباحًا إلى 8 مساءً،
+           لأن الدلالة المسائية موجودة عند النهاية فقط. */
+        if(!m[2] && m[4] && meridiemKind(m[4])==="pm" && a<12*60) a=timeToMin(m[1].replace(/\s/g,""),"ص");
+        if(b<=a)b+=1440;
+      }
+      return {start:a,end:b,explicit:true};
+    }
+  }
+
+  /* وقت واحد: 9 أو 9.30 أو ٩٫٣٠ أو 9 ونص = ساعة واحدة كاملة. */
+  const halfRe=new RegExp("(?:^|[^0-9])"+NUM+"\\s*(?:و\\s*نص|ونص|و\\s*نصف|ونصف)?\\s*("+P+")?(?=$|[^0-9])","i");
+  m=raw.match(halfRe);
+  if(m){
+    let val=m[1].replace(/\s/g,"");
+    let a=timeToMin(val,m[2]||"");
+    if(a!==null)return {start:a,end:a+60,explicit:false};
   }
   return null;
 }
+
+function scheduleExtractTeacherTime(text, teacherName){
+  let raw=String(text||'');
+  let nraw=scheduleNorm(raw);
+  let tn=scheduleNorm(teacherName||'');
+  let rest='';
+
+  /* نبحث عن اسم المعلمة داخل نفس السطر، مع السماح بأن يكون قبله رقم/شرطة/شرطة سفلية،
+     أو أن يكون الاسم مكتوبًا مختصرًا (الاسم الأول فقط). ثم نقرأ الوقت بعد الاسم فقط. */
+  if(tn && nraw.includes(tn)){
+    let pos=nraw.indexOf(tn);
+    rest=raw.slice(pos + teacherName.length);
+  }else if(tn){
+    let first=scheduleNorm((teacherName||'').trim().split(/\s+/)[0]);
+    if(first && nraw.includes(first)){
+      let pos=nraw.indexOf(first);
+      rest=raw.slice(pos + (teacherName.trim().split(/\s+/)[0]||'').length);
+    }
+  }
+
+  /* إزالة أي بقايا فاصل/رقم ترتيب بين الاسم والوقت. */
+  rest=rest.replace(/^[\s\-–—_./\\:：*#()（）]+/,'').trim();
+  return schedulePeriod(rest);
+}
+
 function scheduleFmt(min){
   min=((min%1440)+1440)%1440;
   const h=Math.floor(min/60),m=min%60;
@@ -700,23 +837,40 @@ function scheduleClock(min){
 }
 function parseSchedule(){
   parsedSchedule=[];scheduleIssues=[];
-  const lines=$("scheduleInput").value.split(/\r?\n/).map(x=>x.trim());let started=false;
+  const lines=$("scheduleInput").value.split(/\r?\n/).map(x=>x.trim());
+  let started=false;
   for(let i=0;i<lines.length;i++){
     const line=lines[i];if(!line)continue;
-    if(/^[\(（]?\s*[0-9٠-٩]+\s*[\)）]?\s*[-_./\\:：]*\s*$/.test(line))continue;
+    if(/^\s*[\(（]?\s*[0-9٠-٩]+\s*[\)）]?\s*[-_./\\:：]*\s*$/.test(line))continue;
     const t=matchScheduleTeacher(line);
-    const lineForTime=line.replace(/^\s*[0-9٠-٩]{1,3}\s*[-.)]\s*(?=\D)/,"");
-    let period=schedulePeriod(lineForTime),consumed=false;
-    if(t&&!t.ambiguous&&!period&&i+1<lines.length&&!matchScheduleTeacher(lines[i+1])){
-      period=schedulePeriod(lines[i+1]);if(period)consumed=true;
+    let period=null,consumedNextLine=false;
+    if(t&&!t.ambiguous){
+      period=scheduleExtractTeacherTime(line,t.name);
+      if(!period)period=scheduleExtractTeacherTime(line,(t.name||"").trim().split(/\s+/)[0]);
+      if(!period&&i+1<lines.length){
+        const nextTeacher=matchScheduleTeacher(lines[i+1]);
+        if(!nextTeacher){
+          period=schedulePeriod(lines[i+1]);
+          if(period)consumedNextLine=true;
+        }
+      }
     }
     if(!started){if(!t||!period||t.ambiguous)continue;started=true;}
-    if(!t){if(/[0-9٠-٩]/.test(line))scheduleIssues.push({line:i,text:line,reason:"يوجد وقت في السطر لكن لم أتعرف على اسم المعلمة."});continue;}
-    if(t.ambiguous){scheduleIssues.push({line:i,text:line,reason:"الاسم المختصر يطابق أكثر من معلمة: "+t.names.join("، ")});continue;}
-    if(!period){scheduleIssues.push({line:i,text:line,reason:"تعرفت على المعلمة لكن لم أستطع تحديد وقتها."});continue;}
-    let start=period.start,end=period.end;if(end-start<60)end=start+60;if(end-start>120)end=start+120;
+    else{
+      if(!t){
+        if(/\b(?:[0-9٠-٩]{1,2}(?:[.:،][0-9٠-٩]{1,2})?|\d{1,2}\s*(?:ونص|ونصف))\b/.test(line)&&!/^(?:[-_*🌷💕\s]|[0-9٠-٩])+$/.test(line)){
+          scheduleIssues.push({line:i,text:line,reason:"يوجد وقت في السطر لكن لم أتعرف على اسم المعلمة."});
+        }
+        continue;
+      }
+      if(!period){scheduleIssues.push({line:i,text:line,reason:"تعرفت على المعلمة لكن لم أفهم وقتها."});continue;}
+    }
+    if(t.ambiguous){scheduleIssues.push({line:i,text:line,reason:"اسم المعلمة مطابق لأكثر من قالب."});continue;}
+    let start=period.start,end=period.end;
+    if(end-start<60)end=start+60;
+    if(end-start>120)end=start+120;
     parsedSchedule.push({teacherId:t.id,teacherName:t.name,start,end,sourceLine:line});
-    if(consumed)i++;
+    if(consumedNextLine)i++;
   }
   renderParsedSchedule();
 }
