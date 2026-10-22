@@ -479,10 +479,7 @@ function renderTeacherManager(){
   const q=String($("teacherManagerSearch").value||"").trim().toLocaleLowerCase();
   const found=teachers.filter(t=>!q||String(t.full_name||"").toLocaleLowerCase().includes(q));
   if(!found.length){box.innerHTML='<p class="hint">لا توجد معلمات مطابقة للبحث.</p>';return;}
-  box.innerHTML=found.map(t=>{
-    const details=[t.phone&&("الهاتف: "+t.phone),t.whatsapp&&("واتساب: "+t.whatsapp),t.telegram&&("تليجرام: "+t.telegram),t.messenger&&("مسنجر: "+t.messenger)].filter(Boolean);
-    return '<div class="teacher-manager-row"><div><div class="teacher-manager-name">'+safe(t.full_name)+'</div><div class="hint">'+(t.is_active?'<span class="tag good">نشطة</span>':'<span class="tag">غير نشطة</span>')+'</div><div class="hint">'+(details.length?details.map(x=>safe(x)).join(' · '):'بيانات التواصل غير مضافة بعد')+'</div></div><div class="teacher-manager-actions"><button type="button" class="teacher-mini-btn teacher-mini-edit" data-manager-edit="'+safe(t.id)+'" title="تعديل بيانات المعلمة" aria-label="تعديل بيانات المعلمة">✏️</button><button type="button" class="teacher-mini-btn teacher-mini-delete" data-manager-delete="'+safe(t.id)+'" title="حذف المعلمة" aria-label="حذف المعلمة">🗑️</button></div></div>';
-  }).join("");
+  box.innerHTML=found.map(t=>'<div class="teacher-manager-row"><div><div class="teacher-manager-name">'+safe(t.full_name)+'</div><div class="hint">'+safe(t.phone||t.whatsapp||t.telegram||t.messenger||"بيانات التواصل غير مضافة بعد")+'</div><div class="hint">'+(t.is_active?'<span class="tag good">نشطة</span>':'<span class="tag">غير نشطة</span>')+'</div></div><div class="teacher-manager-actions"><button type="button" class="teacher-mini-btn teacher-mini-edit" data-manager-edit="'+safe(t.id)+'" title="تعديل" aria-label="تعديل">✏️</button><button type="button" class="teacher-mini-btn teacher-mini-delete" data-manager-delete="'+safe(t.id)+'" title="حذف" aria-label="حذف">🗑️</button></div></div>').join("");
   box.querySelectorAll("[data-manager-edit]").forEach(btn=>btn.addEventListener("click",()=>{
     const t=teachers.find(x=>x.id===btn.dataset.managerEdit);if(!t)return;
     closeTeacherManager();openTeacherEditor(t);
