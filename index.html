@@ -79,8 +79,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 0 22px}
 <h2>دخول الإدارة</h2>
 <p class="hint">استخدمي حساب الإدارة المعتمد. الحساب لازم يكون مضافًا ضمن صلاحيات الإدارة في قاعدة البيانات.</p>
 <form id="loginForm">
-<label for="adminEmail">البريد الإلكتروني</label><input id="adminEmail" type="email" autocomplete="username" required>
-<label for="adminPassword">كلمة المرور</label><input id="adminPassword" type="password" autocomplete="current-password" required>
+<label for="adminPassword">كلمة مرور الإدارة</label><input id="adminPassword" type="password" autocomplete="current-password" required>
 <div class="actions"><button class="primary" type="submit">تسجيل الدخول</button></div>
 </form>
 <div id="loginStatus" class="status"></div>
@@ -159,6 +158,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const SUPABASE_URL = "https://hwlwtolzohfrjkxsoqyc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_rFidP6TBB8thOXqsKbP4BA_VCjLckBa";
 const API_URL = SUPABASE_URL + "/functions/v1/exam-organizer-api";
+const ADMIN_EMAIL = "saramoomen01020127827@gmail.com";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
 const $ = (id) => document.getElementById(id);
 let currentExam = null, foundStudent = null, publicTeachers = [], exams = [], teachers = [], dashboard = null;
@@ -206,7 +206,7 @@ const messages = {
 };
 function readable(error) {
   const key = typeof error === "string" ? error : error?.message;
-  return messages[key] || (key === "Invalid login credentials" ? "البريد الإلكتروني أو كلمة المرور غير صحيحين." : key === "Failed to fetch" ? "تعذر الاتصال بالخادم. تحققي من الإنترنت وحاولي مرة أخرى." : "حدث خطأ أثناء تنفيذ الطلب. حاولي مرة أخرى.");
+  return messages[key] || (key === "Invalid login credentials" ? "كلمة مرور الإدارة غير صحيحة." : key === "Failed to fetch" ? "تعذر الاتصال بالخادم. تحققي من الإنترنت وحاولي مرة أخرى." : "حدث خطأ أثناء تنفيذ الطلب. حاولي مرة أخرى.");
 }
 function capacityLabel(t) {
   if (t.remaining === null || t.remaining === undefined) return "السعة غير محددة";
@@ -272,7 +272,7 @@ async function refreshSession() {
 }
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault(); status("loginStatus","جارٍ تسجيل الدخول...","info");
-  const {data,error}=await supabase.auth.signInWithPassword({email:$("adminEmail").value.trim(),password:$("adminPassword").value});
+  const {data,error}=await supabase.auth.signInWithPassword({email:ADMIN_EMAIL,password:$("adminPassword").value});
   if(error){status("loginStatus",readable(error),"bad");return;}
   accessToken=data.session?.access_token||null;
   $("adminPassword").value="";
