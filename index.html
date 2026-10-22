@@ -31,6 +31,19 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 .table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px;min-width:520px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}th{background:#faf6fc;color:var(--p)}
 .issue{border:1px solid #eadbb0;background:#fffaf0;border-radius:12px;padding:12px;margin-top:8px}.issue small{color:var(--muted)}
 .hidden{display:none!important}.divider{border:0;border-top:1px solid var(--line);margin:16px 0}
+.teacher-quick-actions{position:fixed;left:12px;bottom:22px;z-index:4000;display:flex;flex-direction:column;gap:8px;align-items:center}
+.teacher-quick-btn{width:44px;height:44px;min-width:44px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-size:19px;line-height:1;box-shadow:0 4px 14px #0003}
+.teacher-quick-manage{background:#5f2877}.teacher-quick-add{background:#218653}
+.teacher-manager-modal{position:fixed;inset:0;z-index:5000;background:#0008;display:flex;align-items:center;justify-content:center;padding:14px}
+.teacher-manager-box{width:min(540px,100%);max-height:86vh;overflow:auto;background:#fff;border-radius:16px;padding:16px;box-shadow:0 14px 40px #0003}
+.teacher-manager-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.teacher-manager-head h3{margin:0;color:var(--p)}
+.teacher-manager-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--line);border-radius:11px;margin-top:8px}
+.teacher-manager-row .teacher-manager-name{font-weight:bold;color:var(--p);min-width:0;overflow-wrap:anywhere}
+.teacher-manager-actions{display:flex;gap:6px;flex-shrink:0}
+.teacher-mini-btn{width:36px;height:36px;min-width:36px;padding:0;border-radius:9px;display:flex;align-items:center;justify-content:center}
+.teacher-mini-edit{background:#eee8f2;color:var(--p)}.teacher-mini-delete{background:#fdebed;color:#b42335}
+@media(max-width:560px){.teacher-quick-actions{left:9px;bottom:20px}.teacher-quick-btn{width:42px;height:42px;min-width:42px}.teacher-manager-row{align-items:flex-start}.teacher-manager-actions{gap:4px}} 
 footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 0 22px}
 @media(max-width:560px){.wrap{padding:10px}.card{padding:13px}.actions button{flex:1}.tabs .tab{min-width:0}.teacher-head{align-items:flex-start}}
 </style>
@@ -147,6 +160,19 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 0 22px}
 <h2>التسجيلات والبلاغات</h2>
 <div id="registrationsTable" class="table-wrap"></div>
 <div id="issuesList"></div>
+</div>
+
+<div id="teacherQuickActions" class="teacher-quick-actions hidden" aria-label="إدارة المعلمات">
+  <button type="button" id="quickManageTeachers" class="teacher-quick-btn teacher-quick-manage" title="تعديل أو حذف المعلمات" aria-label="تعديل أو حذف المعلمات">✏️</button>
+  <button type="button" id="quickAddTeacher" class="teacher-quick-btn teacher-quick-add" title="إضافة معلمة" aria-label="إضافة معلمة">＋</button>
+</div>
+<div id="teacherManagerModal" class="teacher-manager-modal hidden" role="dialog" aria-modal="true" aria-labelledby="teacherManagerTitle">
+  <div class="teacher-manager-box">
+    <div class="teacher-manager-head"><h3 id="teacherManagerTitle">إدارة المعلمات</h3><button type="button" id="closeTeacherManager" class="gray" aria-label="إغلاق">✕</button></div>
+    <p class="hint">اختاري تعديل بيانات المعلمة أو حذفها. لو كانت مرتبطة باختبار أو تسجيل سابق، سيُحفظ سجلها وتُعطّل بدل حذفها نهائيًا.</p>
+    <input id="teacherManagerSearch" type="search" placeholder="🔎 البحث عن معلمة..." autocomplete="off">
+    <div id="teacherManagerList"></div>
+  </div>
 </div>
 </div>
 </section>
@@ -268,6 +294,8 @@ async function refreshSession() {
   accessToken=data.session?.access_token||null;
   $("loginCard").classList.toggle("hidden",!!accessToken);
   $("adminWorkspace").classList.toggle("hidden",!accessToken);
+  $("teacherQuickActions").classList.toggle("hidden",!accessToken);
+  if(!accessToken) $("teacherManagerModal").classList.add("hidden");
   if(accessToken) await loadAdmin();
 }
 $("loginForm").addEventListener("submit",async e=>{
@@ -349,6 +377,49 @@ $("teacherForm").addEventListener("submit",async e=>{
 });
 function clearTeacherForm(){ $("teacherForm").reset();$("teacherId").value=""; }
 $("clearTeacherBtn").addEventListener("click",clearTeacherForm);
+
+function scrollToTeacherForm(){
+  showTab("adminPanel");
+  clearTeacherForm();
+  $("teacherFormStatus").className="status";
+  $("teacherForm").scrollIntoView({behavior:"smooth",block:"start"});
+  setTimeout(()=> $("teacherName").focus({preventScroll:true}),250);
+}
+$("quickAddTeacher").addEventListener("click",scrollToTeacherForm);
+$("quickManageTeachers").addEventListener("click",openTeacherManager);
+$("closeTeacherManager").addEventListener("click",closeTeacherManager);
+$("teacherManagerModal").addEventListener("click",e=>{if(e.target===$("teacherManagerModal"))closeTeacherManager();});
+$("teacherManagerSearch").addEventListener("input",renderTeacherManager);
+
+function openTeacherManager(){
+  renderTeacherManager();
+  $("teacherManagerModal").classList.remove("hidden");
+}
+function closeTeacherManager(){ $("teacherManagerModal").classList.add("hidden"); }
+function renderTeacherManager(){
+  const box=$("teacherManagerList");
+  const q=String($("teacherManagerSearch").value||"").trim().toLocaleLowerCase();
+  const found=teachers.filter(t=>!q||String(t.full_name||"").toLocaleLowerCase().includes(q));
+  if(!found.length){box.innerHTML='<p class="hint">لا توجد معلمات مطابقة للبحث.</p>';return;}
+  box.innerHTML=found.map(t=>'<div class="teacher-manager-row"><div><div class="teacher-manager-name">'+safe(t.full_name)+'</div><div class="hint">'+(t.is_active?'<span class="tag good">نشطة</span>':'<span class="tag">غير نشطة</span>')+'</div></div><div class="teacher-manager-actions"><button type="button" class="teacher-mini-btn teacher-mini-edit" data-manager-edit="'+safe(t.id)+'" title="تعديل" aria-label="تعديل">✏️</button><button type="button" class="teacher-mini-btn teacher-mini-delete" data-manager-delete="'+safe(t.id)+'" title="حذف" aria-label="حذف">🗑️</button></div></div>').join("");
+  box.querySelectorAll("[data-manager-edit]").forEach(btn=>btn.addEventListener("click",()=>{
+    const t=teachers.find(x=>x.id===btn.dataset.managerEdit);if(!t)return;
+    $("teacherId").value=t.id;$("teacherName").value=t.full_name||"";$("teacherPhone").value=t.phone||"";$("teacherWhatsapp").value=t.whatsapp||"";$("teacherTelegram").value=t.telegram||"";$("teacherMessenger").value=t.messenger||"";$("teacherNotes").value=t.notes||"";
+    closeTeacherManager();showTab("adminPanel");$("teacherForm").scrollIntoView({behavior:"smooth",block:"start"});
+    setTimeout(()=> $("teacherName").focus({preventScroll:true}),250);
+  }));
+  box.querySelectorAll("[data-manager-delete]").forEach(btn=>btn.addEventListener("click",async()=>{
+    const t=teachers.find(x=>x.id===btn.dataset.managerDelete);if(!t)return;
+    if(!confirm("هل تريدين حذف المعلمة «"+t.full_name+"»؟ إذا كانت مرتبطة باختبار أو تسجيل سابق فسيتم تعطيلها للحفاظ على السجلات."))return;
+    btn.disabled=true;
+    try{
+      const result=await api("admin_delete_teacher",{teacher_id:t.id});
+      const tr=await api("admin_list_teachers");teachers=tr.teachers||[];
+      await loadDashboard();await renderTeachers();renderTeacherManager();
+      status("adminStatus",result.deleted?"تم حذف المعلمة.":"تم تعطيل المعلمة للحفاظ على الاختبارات أو التسجيلات السابقة.","ok");
+    }catch(err){btn.disabled=false;status("adminStatus",readable(err),"bad");}
+  }));
+}
 async function renderTeachers() {
   const examId=$("examSelect").value;
   if(!teachers.length){$("teachersList").innerHTML='<p class="hint">أضيفي أول معلمة من النموذج أعلاه.</p>';return;}
