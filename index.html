@@ -320,32 +320,16 @@ async function loadPublicExam() {
     }
   } catch(e) { status("publicExamStatus",readable(e),"bad"); }
 }
-$("lookupForm").addEventListener("submit",async e=>{
-  e.preventDefault(); const num=$("studentNumber").value.trim();
-  $("studentResult").innerHTML=""; foundStudent=null;
-  try {
-    const r=await api("lookup_student",{student_number:num,exam_id:currentExam?.id},false);
-    foundStudent={...r.student,student_number:num}; $("issueStudentNumber").value=num; $("issueName").value=r.student.name;
-    if (r.alreadyRegistered) {
-      $("studentResult").innerHTML='<div class="status show warn">يوجد تسجيل سابق لهذا الرقم في الاختبار. لو محتاجة تعديلًا أو عندك مشكلة، استخدمي نموذج البلاغ.</div>';
-      return;
-    }
-    const isQalun=r.student.riwaya==="qalun";
-    const choices=publicTeachers.filter(t=>(!isQalun||t.acceptsQalun)&&(t.remaining===null||t.remaining>0));
-    const cards=choices.map(t=>'<label class="teacher" style="display:block;cursor:pointer"><span><input type="radio" name="teacherChoice" value="'+safe(t.id)+'" style="width:auto;margin-left:7px">'+safe(t.name)+'</span><div class="hint">'+(t.acceptsQalun?'<span class="tag good">تستقبل قالون</span>':'')+'<span class="tag">'+safe(capacityLabel(t))+'</span>'+(t.startTime&&t.endTime?'<span class="tag">'+safe(t.startTime)+' - '+safe(t.endTime)+'</span>':'')+'</div></label>').join("");
-    $("studentResult").innerHTML='<div class="status show ok">تم العثور على الطالبة. راجعي البيانات قبل التسجيل.</div><div class="card" style="margin-top:10px"><h3>'+safe(r.student.name)+'</h3><span class="tag '+(isQalun?'warn':'good')+'">'+(isQalun?'رواية قالون':'رواية حفص')+'</span><label>اختاري المعلمة</label><div class="grid">'+(cards||'<p class="hint">لا توجد معلمات متاحات لهذه الرواية حاليًا.</p>')+'</div><div class="actions"><button id="registerBtn" class="green" type="button" '+(!choices.length?'disabled':'')+'>تأكيد التسجيل</button></div><div id="registerStatus" class="status"></div></div>';
-    $("registerBtn")?.addEventListener("click",async()=>{
-      const selected=document.querySelector('input[name="teacherChoice"]:checked');
-      if(!selected){status("registerStatus","اختاري المعلمة أولًا.","warn");return;}
-      $("registerBtn").disabled=true;
-      try {
-        await api("register_student",{exam_id:currentExam.id,student_number:num,teacher_id:selected.value},false);
-        status("registerStatus","تم تسجيل اختيارك بنجاح. احتفظي بهذه المعلومة وتابعي أي تعليمات من الإدارة.","ok");
-        await loadPublicExam();
-      } catch(err) { status("registerStatus",readable(err),"bad"); $("registerBtn").disabled=false; }
-    });
-  } catch(err) { $("studentResult").innerHTML='<div class="status show bad">'+safe(readable(err))+'</div>'; }
-});
+async function showStudentRegistration(student,num){
+ foundStudent={...student,student_number:num};$("issueStudentNumber").value=num;$("issueName").value=student.name;
+ if(student.alreadyRegistered){$("studentResult").innerHTML='<div class="status show warn">الطالبة <b>'+safe(student.name)+'</b> مسجلة بالفعل في هذا الاختبار. لو محتاجة تعديلًا أو عندك مشكلة، استخدمي نموذج البلاغ.</div>';return;}
+ const isQalun=student.riwaya==="qalun",choices=publicTeachers.filter(t=>(!isQalun||t.acceptsQalun)&&(t.remaining===null||t.remaining>0));
+ const cards=choices.map(t=>'<label class="teacher" style="display:block;cursor:pointer"><span><input type="radio" name="teacherChoice" value="'+safe(t.id)+'" style="width:auto;margin-left:7px">'+safe(t.name)+'</span><div class="hint">'+(t.acceptsQalun?'<span class="tag good">تستقبل قالون</span>':'')+'<span class="tag">'+safe(capacityLabel(t))+'</span>'+(t.startTime&&t.endTime?'<span class="tag">'+safe(t.startTime)+' - '+safe(t.endTime)+'</span>':'')+'</div></label>').join("");
+ $("studentResult").innerHTML='<div class="status show ok">تم اختيار الطالبة: راجعي بياناتها ثم اختاري المعلمة.</div><div class="card" style="margin-top:10px"><h3>'+safe(student.name)+'</h3><span class="tag '+(isQalun?'warn':'good')+'">'+(isQalun?'رواية قالون':'رواية حفص')+'</span><label>اختاري المعلمة</label><div class="grid">'+(cards||'<p class="hint">لا توجد معلمات متاحات لهذه الرواية حاليًا.</p>')+'</div><div class="actions"><button id="registerBtn" class="green" type="button" '+(!choices.length?'disabled':'')+'>تأكيد التسجيل</button><button id="changeStudentBtn" class="soft" type="button">الرجوع لاختيار الاسم</button></div><div id="registerStatus" class="status"></div></div>';
+ $("changeStudentBtn")?.addEventListener("click",()=>{$("lookupForm").requestSubmit();});
+ $("registerBtn")?.addEventListener("click",async()=>{const selected=document.querySelector('input[name="teacherChoice"]:checked');if(!selected){status("registerStatus","اختاري المعلمة أولًا.","warn");return;}$("registerBtn").disabled=true;try{await api("register_student",{exam_id:currentExam.id,student_id:student.id,teacher_id:selected.value},false);status("registerStatus","تم تسجيل اختيارك بنجاح. احتفظي بهذه المعلومة وتابعي أي تعليمات من الإدارة.","ok");await loadPublicExam();}catch(err){status("registerStatus",readable(err),"bad");$("registerBtn").disabled=false;}});
+}
+$("lookupForm").addEventListener("submit",async e=>{e.preventDefault();const num=scheduleDigits($("studentNumber").value.trim()).replace(/\s/g,"");$("studentResult").innerHTML="";foundStudent=null;try{const r=await api("lookup_student",{student_number:num,exam_id:currentExam?.id},false);$("issueStudentNumber").value=num;if(r.students.length===1){await showStudentRegistration(r.students[0],num);return;}const choices=r.students.map((student,i)=>'<label class="teacher" style="display:block;cursor:pointer"><span><input type="radio" name="studentNameChoice" value="'+safe(student.id)+'" style="width:auto;margin-left:7px" '+(i===0?'checked':'')+'>'+safe(student.name)+'</span><div class="hint"><span class="tag '+(student.riwaya==="qalun"?'warn':'good')+'">'+(student.riwaya==="qalun"?'رواية قالون':'رواية حفص')+'</span>'+(student.alreadyRegistered?'<span class="tag warn">مسجلة بالفعل</span>':'')+'</div></label>').join("");$("studentResult").innerHTML='<div class="status show ok">الرقم ده مشترك بين '+r.students.length+' طالبات. اختاري اسمك أولًا.</div><div class="card" style="margin-top:10px"><label>اسم الطالبة</label><div class="grid">'+choices+'</div><div class="actions"><button id="confirmStudentChoice" class="green" type="button">متابعة</button></div></div>';$("confirmStudentChoice")?.addEventListener("click",async()=>{const selected=document.querySelector('input[name="studentNameChoice"]:checked');if(!selected)return;const student=r.students.find(x=>x.id===selected.value);if(student)await showStudentRegistration(student,num);});}catch(err){$("studentResult").innerHTML='<div class="status show bad">'+safe(readable(err))+'</div>';}});
 
 $("toggleIssueForm").addEventListener("click",()=>{
  const card=$("studentIssueCard"),opening=card.classList.contains("hidden");
@@ -505,47 +489,29 @@ async function renderTeachers() {
 /* Old-organizer style list parsing and allocation; isolated from registration records. */
 let parsedExamStudents=[], previousExamInputs=null, generatedExamGroups=[];
 function examNorm(v){return String(v||"").normalize("NFKC").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/[ًٌٍَُِّْـ]/g,"").replace(/\s+/g," ").trim().toLowerCase();}
-function examCleanName(v){return String(v||"").replace(/[0-9٠-٩]+/g," ").replace(/[*_~`#()（）\[\]{}«»]/g," ").replace(/(قالون|حفص|ورش)/gi," ").replace(/\s+/g," ").trim();}
+function examCleanName(v){return String(v||"").replace(/(قالون|قولون|حفص|ورش|qalun)/gi," ").replace(/[*_~#()（）\x60\[\]{}«»]/g," ").replace(/[🌷🎀👑🪷🌸🌺🌼🌿🫂🍭🍒✨🪻🌹🥀🌱🤝❤❤️♥💕💗💞💓💖💘💝💟🩷➖↔]/gu," ").replace(/\s+/g," ").trim();}
 function examSplitLine(raw){
- let line=String(raw||"").trim(); if(!line)return [];
- if(line.includes("|")){
-   const fields=line.split("|").map(x=>x.trim());
-   if(fields.length>=2 && fields[0] && fields[1]){
-     const student_number=scheduleDigits(fields[0]).replace(/\s/g,"");
-     const name=examCleanName(fields[1]);
-     const tail=fields.slice(2).join(" ");
-     const riwayah=/قالون|قولون|qalun/i.test(tail)?"قالون":(/ورش/.test(tail)?"ورش":"حفص");
-     if(student_number && name)return [{name,student_number,riwayah,groupNo:"student-"+student_number,line:raw}];
-   }
- }
- const group=line.match(/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[（(]?\s*([0-9٠-٩]+)\s*[)）]?\s*(?:[🌷🎀👑🪷🌸🌺🌼🌿🫂/\\._\-–—*:：+]|\s)*/);
- const groupNo=group?group[1]:""; if(group)line=line.slice(group[0].length);
+ let line=String(raw||"").trim();if(!line)return[];
+ const explicit=line.match(/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[（(]?\s*([0-9٠-٩]+)\s*[)）\]】.]?\s*\|\s*(.+)$/u);
+ if(explicit){const fields=raw.split("|").map(x=>x.trim()),student_number=scheduleDigits(explicit[1]).replace(/\s/g,""),name=examCleanName(fields[1]||""),tail=fields.slice(2).join(" "),riwayah=/قالون|قولون|qalun/i.test(tail)?"قالون":(/ورش/.test(tail)?"ورش":"حفص");return name&&student_number?[{name,student_number,riwayah,groupNo:student_number,line:raw}]:[];}
+ const group=line.match(/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[🌷🎀👑🪷🌸🌺🌼🌿]*\s*[（(]?\s*([0-9٠-٩]+)\s*[)）\]\]】.]?\s*(?:[🌷🎀👑🪷🌸🌺🌼🌿🫂/\\._\-–—*:：+]|\s)*/u);
+ const groupNo=group?scheduleDigits(group[1]).replace(/\s/g,""):"";if(group)line=line.slice(group[0].length);
  const riwayah=/قالون|قولون/i.test(line)?"قالون":(/ورش/.test(line)?"ورش":"حفص");
- const parts=line.split(/\s*(?:🤝|❤|❤️|♥|💕|💗|💞|💓|💖|💘|💝|💟|🩷|🍒|✨|🎀|🌿|🪻|🌸|🌷|🌹|🫂|🥀|🌱|🪷|👑|➖|↔|<>|\||\/|\+|←|→)\s*/u).filter(Boolean);
- if(parts.length===1 && !groupNo)return [];
- return parts.map(p=>({name:examCleanName(p),student_number:"",riwayah,groupNo})).filter(p=>p.name);
+ const names=line.split(/\s*(?:🤝|❤|❤️|♥|💕|💗|💞|💓|💖|💘|💝|💟|🩷|🍒|🍭|✨|🎀|🌿|🪻|🌸|🌷|🌹|🫂|🥀|🌱|🪷|👑|➖|↔|<>|\||\/|\+|←|→)\s*/u).map(examCleanName).filter(Boolean);
+ return names.map(name=>({name,student_number:groupNo,riwayah,groupNo,line:raw}));
 }
 function parseExamStudents(){
- parsedExamStudents=[];
- const lines=$("studentsInput").value.split(/\r?\n/); let started=false,lastGroup="";
- lines.forEach((line,i)=>{
-  const raw=line.trim(); if(!raw)return;
-  const hasNum=/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[（(]?\s*[0-9٠-٩]+/.test(raw);
-  if(!started&&!hasNum)return;
-  if(hasNum){started=true;const row=examSplitLine(raw);row.forEach(x=>{x.line=i+1;parsedExamStudents.push(x)});lastGroup=row[0]?.groupNo||"";return;}
-  if(lastGroup && /قالون/.test(raw)){parsedExamStudents.filter(x=>x.groupNo===lastGroup).forEach(x=>x.riwayah="قالون");return;}
-  if(lastGroup && /^[ء-ي]+(?:\s+[ء-ي]+){0,5}$/.test(raw) && raw.split(/\s+/).length<=6){parsedExamStudents.push({name:examCleanName(raw),riwayah:/قالون/.test(raw)?"قالون":"حفص",groupNo:lastGroup,line:i+1});lastGroup="";}
+ parsedExamStudents=[];const lines=$("studentsInput").value.split(/\r?\n/);let started=false,lastGroup="",awaitingPartner=false,lastGroupRiwayah="حفص";
+ lines.forEach((line,i)=>{const raw=line.trim();if(!raw)return;const hasNum=/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[🌷🎀👑🪷🌸🌺🌼🌿]*\s*[（(]?\s*[0-9٠-٩]+/.test(raw);if(!started&&!hasNum)return;
+  if(hasNum){started=true;const row=examSplitLine(raw);row.forEach(x=>{x.line=i+1;parsedExamStudents.push(x)});lastGroup=row[0]?.groupNo||"";lastGroupRiwayah=row[0]?.riwayah||"حفص";awaitingPartner=!!lastGroup&&row.length===1;return;}
+  if(lastGroup&&/^(قالون|قولون|حفص|ورش)$/i.test(raw)){if(/قالون|قولون/.test(raw))lastGroupRiwayah="قالون";else if(/ورش/.test(raw))lastGroupRiwayah="ورش";parsedExamStudents.filter(x=>x.groupNo===lastGroup).forEach(x=>x.riwayah=lastGroupRiwayah);return;}
+  if(awaitingPartner&&lastGroup){const name=examCleanName(raw);if(name&&!/^(المعلمة|قائمة اختبار|الاختبار)$/i.test(name)){parsedExamStudents.push({name,student_number:lastGroup,riwayah:lastGroupRiwayah,groupNo:lastGroup,line:i+1});awaitingPartner=false;}}
  });
- const groups={}; parsedExamStudents.forEach(st=>{if(st.groupNo){groups[st.groupNo] ||= "حفص";if(st.riwayah==="قالون")groups[st.groupNo]="قالون";}});
- parsedExamStudents.forEach(st=>{if(st.groupNo)st.riwayah=groups[st.groupNo];});
- const dup={};parsedExamStudents.forEach(st=>(dup[examNorm(st.name)] ||= []).push(st));
- const dups=Object.values(dup).filter(a=>a.length>1).length, q=parsedExamStudents.filter(x=>x.riwayah==="قالون").length;
+ const groups={};parsedExamStudents.forEach(st=>{if(st.groupNo){groups[st.groupNo]||="حفص";if(st.riwayah==="قالون")groups[st.groupNo]="قالون";else if(st.riwayah==="ورش"&&groups[st.groupNo]!=="قالون")groups[st.groupNo]="ورش";}});parsedExamStudents.forEach(st=>{if(st.groupNo)st.riwayah=groups[st.groupNo];});
+ const dup={};parsedExamStudents.forEach(st=>(dup[examNorm(st.name)]||=[]).push(st));const dups=Object.values(dup).filter(a=>a.length>1).length,q=parsedExamStudents.filter(x=>x.riwayah==="قالون").length;
  $("studentsStats").innerHTML=parsedExamStudents.length?'<div class="stat"><b>'+parsedExamStudents.length+'</b> إجمالي الطالبات</div><div class="stat"><b>'+(parsedExamStudents.length-q)+'</b> حفص/ورش</div><div class="stat"><b>'+q+'</b> قالون</div><div class="stat"><b>'+dups+'</b> أسماء مكررة</div>':'';
- $("studentsPreview").innerHTML=parsedExamStudents.length?'<table class="schedule-preview-table"><thead><tr><th>رقم الطالبة</th><th>اسم الطالبة</th><th>الرواية</th></tr></thead><tbody>'+parsedExamStudents.map(x=>'<tr><td>'+safe(x.student_number||"غير موجود")+'</td><td>'+safe(x.name)+'</td><td>'+safe(x.riwayah)+'</td></tr>').join("")+'</tbody></table>':'';
- $("studentsStatus").className="status "+(parsedExamStudents.length?"ok":"bad");
- $("studentsStatus").textContent=parsedExamStudents.length?"تم فصل "+parsedExamStudents.length+" طالبة. راجعي الأسماء والروايات قبل إنشاء القوائم.":"لم يتم فصل أي طالبة. تأكدي من ترقيم الأسطر أو وجود فاصل واضح بين الطالبتين.";
- if(!parsedExamStudents.length)$("studentIssues").innerHTML="";
- return parsedExamStudents;
+ $("studentsPreview").innerHTML=parsedExamStudents.length?'<table class="schedule-preview-table"><thead><tr><th>رقم الطالبة المشترك</th><th>اسم الطالبة</th><th>الرواية</th></tr></thead><tbody>'+parsedExamStudents.map(x=>'<tr><td>'+safe(x.student_number||"غير موجود")+'</td><td>'+safe(x.name)+'</td><td>'+safe(x.riwayah)+'</td></tr>').join("")+'</tbody></table>':'';
+ $("studentsStatus").className="status "+(parsedExamStudents.length?"ok":"bad");$("studentsStatus").textContent=parsedExamStudents.length?"تم فصل "+parsedExamStudents.length+" طالبة. الرقم قد يكون مشتركًا بين طالبتين. راجعي الأسماء والروايات قبل إنشاء القوائم.":"لم يتم فصل أي طالبة. تأكدي من ترقيم الأسطر أو وجود فاصل واضح بين الطالبتين.";if(!parsedExamStudents.length)$("studentIssues").innerHTML="";return parsedExamStudents;
 }
 function renderQalunChoices(){
  const box=$("qalunTeachers");
@@ -588,22 +554,7 @@ function generateExamLists(){
  }catch(e){$("listGenerationStatus").className="status bad";$("listGenerationStatus").textContent=e.message;}
 }
 ["studentsInput","scheduleInput"].forEach(id=>$(id).addEventListener("focus",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};}));
-async function syncParsedStudentsToExam(){
- const examId=$("examSelect").value;
- if(!examId){status("studentsStatus","احفظي بيانات الاختبار واختاريه أولًا قبل ربط القائمة بواجهة الطالبات.","warn");return;}
- if(!parsedExamStudents.length)return;
- const missing=parsedExamStudents.filter(x=>!x.student_number);
- if(missing.length){status("studentsStatus","تم فصل الأسماء، لكن لم تُربط بواجهة الطالبات لأن "+missing.length+" طالبة بلا رقم. استخدمي الصيغة: رقم الطالبة | الاسم | الرواية.","warn");return;}
- const seen=new Set(),duplicates=[];
- for(const st of parsedExamStudents){if(seen.has(st.student_number))duplicates.push(st.student_number);seen.add(st.student_number);}
- if(duplicates.length){status("studentsStatus","توجد أرقام مكررة في القائمة: "+[...new Set(duplicates)].join("، ")+" — راجعيها قبل الحفظ.","bad");return;}
- try{
-   const students=parsedExamStudents.map(x=>({student_number:x.student_number,student_name:x.name,riwaya:/قالون/.test(x.riwayah)?"qalun":"hafs"}));
-   const result=await api("admin_import_students",{exam_id:examId,students});
-   status("studentsStatus","تم تحليل "+parsedExamStudents.length+" طالبة وربط القائمة نفسها بواجهة الطالبات. تم حفظ "+result.saved+" سجلًا.","ok");
-   await loadDashboard();
- }catch(e){status("studentsStatus","تم التحليل لكن تعذر ربط القائمة بواجهة الطالبات: "+readable(e),"bad");}
-}
+async function syncParsedStudentsToExam(){const examId=$("examSelect").value;if(!examId){status("studentsStatus","احفظي بيانات الاختبار واختاريه أولًا قبل ربط القائمة بواجهة الطالبات.","warn");return;}if(!parsedExamStudents.length)return;const missing=parsedExamStudents.filter(x=>!x.student_number);if(missing.length){status("studentsStatus","فيه "+missing.length+" طالبة لم أستطع تحديد رقمها من القائمة. راجعي ترقيمها قبل الحفظ.","warn");return;}try{const students=parsedExamStudents.map(x=>({student_number:x.student_number,student_name:x.name,riwaya:/قالون/.test(x.riwayah)?"qalun":"hafs"}));const result=await api("admin_import_students",{exam_id:examId,students});status("studentsStatus","تم تحليل "+parsedExamStudents.length+" طالبة وحفظ "+result.saved+" سجلًا. الأرقام المشتركة مدعومة الآن.","ok");await loadDashboard();}catch(e){status("studentsStatus","تم التحليل لكن تعذر ربط القائمة بواجهة الطالبات: "+readable(e),"bad");}}
 $("parseStudentsBtn").addEventListener("click",async()=>{parseExamStudents();await syncParsedStudentsToExam();});
 $("toggleStudentNames").addEventListener("click",()=>{
  const box=$("studentsPreview"),btn=$("toggleStudentNames"),show=box.classList.contains("hidden");
