@@ -485,6 +485,12 @@ function matchScheduleTeacher(line){
   });
   if(first.length===1)return first[0];
   if(first.length>1)return {ambiguous:true,names:first.map(t=>t.name)};
+  const words=n.split(/\s+/).filter(w=>w.length>=3);
+  function lev(a,b){let d=Array.from({length:b.length+1},(_,i)=>i);for(let i=0;i<a.length;i++){let nd=[i+1];for(let j=0;j<b.length;j++)nd.push(Math.min(nd[j]+1,d[j+1]+1,d[j]+(a[i]===b[j]?0:1)));d=nd;}return d[b.length];}
+  let best=[],min=99;
+  for(const t of active){const f=scheduleNorm(t.name).split(" ")[0];for(const w of words){const dist=lev(w,f);if(dist<min){min=dist;best=[t];}else if(dist===min&&!best.some(x=>x.id===t.id))best.push(t);}}
+  if(min<=1&&best.length===1)return best[0];
+  if(min<=1&&best.length>1)return {ambiguous:true,names:best.map(t=>t.name)};
   return null;
 }
 function schedulePeriod(text){
@@ -536,7 +542,8 @@ function parseSchedule(){
     const line=lines[i];if(!line)continue;
     if(/^[\(（]?\s*[0-9٠-٩]+\s*[\)）]?\s*[-_./\\:：]*\s*$/.test(line))continue;
     const t=matchScheduleTeacher(line);
-    let period=schedulePeriod(line),consumed=false;
+    const lineForTime=line.replace(/^\s*[0-9٠-٩]{1,3}\s*[-.)]\s*(?=\D)/,"");
+    let period=schedulePeriod(lineForTime),consumed=false;
     if(t&&!t.ambiguous&&!period&&i+1<lines.length&&!matchScheduleTeacher(lines[i+1])){
       period=schedulePeriod(lines[i+1]);if(period)consumed=true;
     }
