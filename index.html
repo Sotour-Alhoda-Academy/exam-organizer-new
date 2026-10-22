@@ -49,7 +49,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 .teacher-manager-modal{position:fixed;inset:0;z-index:5000;background:#0008;display:flex;align-items:center;justify-content:center;padding:14px}.teacher-manager-box{width:min(540px,100%);max-height:86vh;overflow:auto;background:#fff;border-radius:16px;padding:16px;box-shadow:0 14px 40px #0003}.teacher-manager-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.teacher-manager-head h3{margin:0;color:var(--p)}.teacher-manager-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--line);border-radius:11px;margin-top:8px}.teacher-manager-name{font-weight:bold;color:var(--p);min-width:0;overflow-wrap:anywhere}.teacher-manager-actions{display:flex;gap:6px;flex-shrink:0}.teacher-mini-btn{width:36px;height:36px;min-width:36px;padding:0;border-radius:9px;display:flex;align-items:center;justify-content:center}.teacher-mini-edit{background:#eee8f2;color:var(--p)}.teacher-mini-delete{background:#fdebed;color:#b42335}@media(max-width:560px){.teacher-quick-actions{left:9px;bottom:20px}.teacher-quick-btn{width:42px;height:42px;min-width:42px}.teacher-manager-row{align-items:flex-start}}footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 0 22px}
 @media(max-width:560px){.wrap{padding:10px}.card{padding:13px}.actions button{flex:1}.tabs .tab{min-width:0}.teacher-head{align-items:flex-start}}
 
-.duration-picker{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#faf7fb;border:1px solid #e5dbea;border-radius:12px;padding:12px;margin:12px 0}
+.optional-roster summary{cursor:pointer;font-weight:700;color:#71358b;padding:4px}.optional-roster .roster-inner{padding-top:12px}.duration-picker{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#faf7fb;border:1px solid #e5dbea;border-radius:12px;padding:12px;margin:12px 0}
 .duration-picker label{display:flex;align-items:center;gap:6px;cursor:pointer;margin:0}
 .duration-picker input{width:auto;margin:0}
 .checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:12px 0}
@@ -113,7 +113,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 
 <div id="adminWorkspace" class="hidden">
 <div class="card">
-<h2>📝 بيانات الاختبار</h2>
+<div class="teacher-head"><h2>📝 بيانات الاختبار</h2><button id="logoutBtn" class="gray" type="button">تسجيل الخروج</button></div>
 <form id="examForm">
 <input id="editExamId" type="hidden">
 <label for="examTitle">اسم الاختبار</label><input id="examTitle" maxlength="200" required placeholder="مثال: اختبار سورة النور">
@@ -129,6 +129,11 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div class="actions"><button class="primary" type="submit">حفظ الاختبار</button><button class="gray" type="button" id="newExamBtn">اختبار جديد</button></div>
 </form>
 <div id="examFormStatus" class="status"></div>
+<div id="adminStatus" class="status"></div>
+<label for="examSelect">الاختبار الحالي</label>
+<select id="examSelect"><option value="">لا توجد اختبارات</option></select>
+<div class="actions"><button class="soft" id="refreshAdmin" type="button">تحديث البيانات</button></div>
+<div id="dashboardStats" class="stats"></div>
 </div>
 
 <div class="card" id="guide-students">
@@ -143,14 +148,14 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div id="studentsStatus" class="status"></div><div id="studentsStats" class="stats"></div><div id="studentIssues"></div><div id="studentsPreview" class="table-wrap"></div>
 </div>
 
-<div class="card">
+<details class="card optional-roster"><summary>📋 استيراد سجل الطالبات للتسجيل بالموقع (اختياري)</summary><div class="roster-inner">
 <h2>📋 استيراد سجل الطالبات للتسجيل بالموقع</h2>
 <p class="hint">هذا القسم اختياري، ويُستخدم فقط إذا كنتِ تريدين تحديث سجل الطالبات اللاتي سيستخدمن صفحة التسجيل بالموقع. أما قائمة الاختبار فتُجهّز في القسم السابق.</p>
 <label for="studentsImport">قائمة الطالبات</label>
 <textarea id="studentsImport" placeholder="1001 | مريم أحمد | حفص&#10;1002 | سارة محمد | قالون"></textarea>
 <div class="actions"><button id="importStudentsBtn" class="primary" type="button">استيراد القائمة</button></div>
 <div id="importStatus" class="status"></div>
-</div>
+</div></details>
 
 <div class="card" id="scheduleCard">
 <h2>🕐 2) جدول مواعيد المعلمات</h2>
@@ -198,15 +203,6 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <h2>📋 التسجيلات</h2>
 <div id="registrationsTable" class="table-wrap"></div>
 </div>
-<div class="card">
-<div class="teacher-head"><h2>لوحة الإدارة</h2><button id="logoutBtn" class="gray" type="button">تسجيل الخروج</button></div>
-<div id="adminStatus" class="status"></div>
-<label for="examSelect">الاختبار الحالي</label>
-<select id="examSelect"><option value="">لا توجد اختبارات</option></select>
-<div class="actions"><button class="soft" id="refreshAdmin" type="button">تحديث البيانات</button></div>
-<div id="dashboardStats" class="stats"></div>
-</div>
-
 <div class="card"><h2>📨 البلاغات والشكاوى</h2><div id="issuesList"></div></div>
 
 <div id="teacherQuickActions" class="teacher-quick-actions hidden" aria-label="إدارة المعلمات">
@@ -511,7 +507,6 @@ function examSplitLine(raw){
  return parts.map(p=>({name:examCleanName(p),riwayah,groupNo})).filter(p=>p.name);
 }
 function parseExamStudents(){
- previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};
  parsedExamStudents=[];
  const lines=$("studentsInput").value.split(/\r?\n/); let started=false,lastGroup="";
  lines.forEach((line,i)=>{
@@ -573,8 +568,9 @@ function generateExamLists(){
   $("listGenerationStatus").className="status ok";$("listGenerationStatus").textContent="تم إنشاء "+generatedExamGroups.length+" قائمة وتوزيع "+parsedExamStudents.length+" طالبة.";
  }catch(e){$("listGenerationStatus").className="status bad";$("listGenerationStatus").textContent=e.message;}
 }
+["studentsInput","scheduleInput"].forEach(id=>$(id).addEventListener("focus",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};}));
 $("parseStudentsBtn").addEventListener("click",parseExamStudents);
-$("clearStudentsBtn").addEventListener("click",()=>{$("studentsInput").value="";parsedExamStudents=[];$("studentsStatus").textContent="";$("studentsStats").innerHTML="";$("studentsPreview").innerHTML="";$("studentIssues").innerHTML="";$("generatedLists").innerHTML="";$("listReview").innerHTML="";$("listGenerationStatus").textContent="";});
+$("clearStudentsBtn").addEventListener("click",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};$("studentsInput").value="";parsedExamStudents=[];$("studentsStatus").textContent="";$("studentsStats").innerHTML="";$("studentsPreview").innerHTML="";$("studentIssues").innerHTML="";$("generatedLists").innerHTML="";$("listReview").innerHTML="";$("listGenerationStatus").textContent="";});
 $("undoInputsBtn").addEventListener("click",()=>{if(!previousExamInputs){status("studentsStatus","لا يوجد تعديل سابق محفوظ للتراجع إليه.","bad");return;}$("studentsInput").value=previousExamInputs.students;$("scheduleInput").value=previousExamInputs.schedule;parseExamStudents();parseSchedule();});
 $("undoScheduleBtn").addEventListener("click",()=>{if(previousExamInputs){$("scheduleInput").value=previousExamInputs.schedule;parseSchedule();}else status("scheduleStatus","لا يوجد تعديل سابق محفوظ للتراجع إليه.","bad");});
 $("selectAllQalunBtn").addEventListener("click",()=>document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=true));
@@ -696,7 +692,7 @@ function renderParsedSchedule(){
   else status("scheduleStatus","تم تحليل المواعيد بنجاح. راجعي الجدول ثم احفظي مواعيد الاختبار.","ok");
 }
 $("parseScheduleBtn").addEventListener("click",parseSchedule);
-$("clearScheduleBtn").addEventListener("click",()=>{$("scheduleInput").value="";parsedSchedule=[];scheduleIssues=[];$("scheduleStats").innerHTML="";$("schedulePreview").innerHTML="";$("scheduleIssues").innerHTML="";$("saveScheduleBtn").disabled=true;$("scheduleStatus").className="status";$("scheduleStatus").textContent="";});
+$("clearScheduleBtn").addEventListener("click",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};$("scheduleInput").value="";parsedSchedule=[];scheduleIssues=[];$("scheduleStats").innerHTML="";$("schedulePreview").innerHTML="";$("scheduleIssues").innerHTML="";renderQalunChoices();$("saveScheduleBtn").disabled=true;$("scheduleStatus").className="status";$("scheduleStatus").textContent="";});
 $("saveScheduleBtn").addEventListener("click",async()=>{
   const examId=$("examSelect").value;if(!examId){status("scheduleStatus","احفظي بيانات الاختبار أولًا ثم اختاريه من قائمة الاختبارات.","bad");return;}if(!parsedSchedule.length)return;
   const btn=$("saveScheduleBtn");btn.disabled=true;btn.textContent="جارٍ حفظ المواعيد...";
