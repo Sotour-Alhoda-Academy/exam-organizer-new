@@ -131,15 +131,6 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div id="examFormStatus" class="status"></div>
 </div>
 
-<div class="card">
-<div class="teacher-head"><h2>لوحة الإدارة</h2><button id="logoutBtn" class="gray" type="button">تسجيل الخروج</button></div>
-<div id="adminStatus" class="status"></div>
-<label for="examSelect">الاختبار الحالي</label>
-<select id="examSelect"><option value="">لا توجد اختبارات</option></select>
-<div class="actions"><button class="soft" id="refreshAdmin" type="button">تحديث البيانات</button></div>
-<div id="dashboardStats" class="stats"></div>
-</div>
-
 <div class="card" id="guide-students">
 <h2>👩‍🎓 1) قائمة الطالبات</h2>
 <p class="hint">الصقي القائمة كما تصلك. لو السطر فيه طالبتان، استخدمي 🤝 أو أي فاصل واضح. وإذا كُتبت «قالون» في نهاية السطر فالرواية تُطبق على الطالبتين معًا.</p>
@@ -207,6 +198,15 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <h2>📋 التسجيلات</h2>
 <div id="registrationsTable" class="table-wrap"></div>
 </div>
+<div class="card">
+<div class="teacher-head"><h2>لوحة الإدارة</h2><button id="logoutBtn" class="gray" type="button">تسجيل الخروج</button></div>
+<div id="adminStatus" class="status"></div>
+<label for="examSelect">الاختبار الحالي</label>
+<select id="examSelect"><option value="">لا توجد اختبارات</option></select>
+<div class="actions"><button class="soft" id="refreshAdmin" type="button">تحديث البيانات</button></div>
+<div id="dashboardStats" class="stats"></div>
+</div>
+
 <div class="card"><h2>📨 البلاغات والشكاوى</h2><div id="issuesList"></div></div>
 
 <div id="teacherQuickActions" class="teacher-quick-actions hidden" aria-label="إدارة المعلمات">
@@ -580,6 +580,8 @@ $("undoScheduleBtn").addEventListener("click",()=>{if(previousExamInputs){$("sch
 $("selectAllQalunBtn").addEventListener("click",()=>document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=true));
 $("clearQalunBtn").addEventListener("click",()=>document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=false));
 $("generateListsBtn").addEventListener("click",generateExamLists);
+document.querySelectorAll('input[name="listDuration"]').forEach(r=>r.addEventListener("change",()=>{ $("examDuration").value=r.value; if(parsedSchedule.length)renderParsedSchedule(); }));
+
 
 let parsedSchedule=[],scheduleIssues=[];
 function scheduleNorm(s){
