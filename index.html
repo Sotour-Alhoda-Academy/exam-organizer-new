@@ -960,7 +960,7 @@ async function saveAllExamWorkspace(){
   if(scheduleIssues.length&&!confirm("فيه "+scheduleIssues.length+" سطر في رسالة المواعيد يحتاج مراجعة. سيتم حفظ المواعيد التي تم التعرف عليها فقط. هل تريدين الاستمرار؟"))return;
   const examId=$("editExamId").value;
   const duration=Number(document.querySelector('input[name="listDuration"]:checked')?.value||5)===10?10:5;
-  const savedExam=await api("admin_save_exam",{exam_id:examId||undefined,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:"published",registration_state:$("registrationState").value,instructions:$("examInstructions").value});
+  const savedExam=await api("admin_save_exam",{exam_id:examId||undefined,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:(examId?(exams.find(x=>x.id===examId)?.status||"draft"):"draft"),registration_state:$("registrationState").value,instructions:$("examInstructions").value});
   const id=savedExam.exam.id;
   $("examSelect").value=id;$("editExamId").value=id;
   exams=[savedExam.exam,...exams.filter(x=>x.id!==id)];
@@ -975,10 +975,12 @@ async function saveAllExamWorkspace(){
   }
   const groupsToSave=generatedExamGroups.map(g=>({teacherId:g.teacherId,teacherName:g.teacherName,start:g.start,end:g.end,capacity:g.capacity,students:(g.students||[]).map(st=>({name:st.name,student_number:st.student_number,riwayah:st.riwayah,start:st.start,end:st.end}))}));
   await api("admin_save_workspace",{exam_id:id,students_input:$("studentsInput").value,schedule_input:$("scheduleInput").value,list_duration_minutes:duration,generated_lists:groupsToSave});
-  savedQalunTeacherIds=qids;fillExamForm(savedExam.exam);workspaceLoadedExamId="";
+  const finalExamResult=await api("admin_save_exam",{exam_id:id,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:"published",registration_state:$("registrationState").value,instructions:$("examInstructions").value});
+  const finalExam=finalExamResult.exam;exams=[finalExam,...exams.filter(x=>x.id!==id)];
+  savedQalunTeacherIds=qids;fillExamForm(finalExam);workspaceLoadedExamId="";
   await loadDashboard();await renderTeachers();
   selectedPublicExamId=id;await loadPublicExam(id);
-  status("saveAllWorkspaceStatus","تم حفظ كل البيانات وقائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون، ونُشر الاختبار للطالبات. حالة التسجيل الحالية: "+({"open":"مفتوح","closed":"مغلق","paused":"متوقف مؤقتًا"}[savedExam.exam.registration_state]||savedExam.exam.registration_state)+".","ok");
+  status("saveAllWorkspaceStatus","تم حفظ كل البيانات وقائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون، ونُشر الاختبار للطالبات. حالة التسجيل الحالية: "+({"open":"مفتوح","closed":"مغلق","paused":"متوقف مؤقتًا"}[finalExam.registration_state]||finalExam.registration_state)+".","ok");
   status("adminStatus","تم حفظ إعدادات الاختبار ونشره. يمكنك اختيار أي اختبار من قائمة «الاختبار الحالي».","ok");
  }catch(e){status("saveAllWorkspaceStatus",readable(e),"bad");}
  finally{btn.disabled=false;btn.textContent="💾 حفظ كل البيانات ونشر الاختبار";}
