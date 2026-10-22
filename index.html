@@ -778,10 +778,14 @@ const colonRange=new RegExp(COLONNUM+"\\s*:\\s*"+COLONNUM+"\\s*("+P+")?","i");
     let b=timeToMin(m[3].replace(/\s/g,""),p2);
     if(a!==null&&b!==null){
       if(b<=a){
-        /* لو كتب 10 - 8 م فالمقصود عادة 10 صباحًا إلى 8 مساءً،
-           لأن الدلالة المسائية موجودة عند النهاية فقط. */
-        if(!m[2] && m[4] && meridiemKind(m[4])==="pm" && a<12*60) a=timeToMin(m[1].replace(/\s/g,""),"ص");
-        if(b<=a)b+=1440;
+        /* إذا كُتب الطرفان مساءً وانتهى المدى عند 12، فالمقصود منتصف الليل لا ظهر اليوم التالي. */
+        if(m[2] && m[4] && meridiemKind(m[2])==="pm" && meridiemKind(m[4])==="pm" && Number(m[3].replace(/\s/g,"").split(".")[0])===12 && a>=12*60) b=1440;
+        else {
+          /* لو كتب 10 - 8 م فالمقصود عادة 10 صباحًا إلى 8 مساءً،
+             لأن الدلالة المسائية موجودة عند النهاية فقط. */
+          if(!m[2] && m[4] && meridiemKind(m[4])==="pm" && a<12*60) a=timeToMin(m[1].replace(/\s/g,""),"ص");
+          if(b<=a)b+=1440;
+        }
       }
       return {start:a,end:b,explicit:true};
     }
