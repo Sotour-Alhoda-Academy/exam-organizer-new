@@ -188,7 +188,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <h2>📖 3) معلمات طالبات قالون</h2>
 <p class="hint">اختاري المعلمات التي تريدين أن تستقبل طالبات قالون في هذا الاختبار. حللي المواعيد أولًا.</p>
 <div id="qalunTeachers" class="checks">حللي المواعيد أولًا.</div>
-<div class="actions"><button type="button" id="selectAllQalunBtn" class="green">☑ اختيار الكل</button><button type="button" id="clearQalunBtn" class="gray">إلغاء الكل</button></div>
+<div class="actions"><button type="button" id="selectAllQalunBtn" class="green">☑ اختيار الكل</button><button type="button" id="clearQalunBtn" class="gray">إلغاء الكل</button><button type="button" id="saveQalunBtn" class="primary">💾 حفظ اختيار معلمات قالون</button></div>
 </div>
 
 <div class="card" id="guide-generate">
@@ -300,6 +300,13 @@ function readable(error) {
   const key = typeof error === "string" ? error : error?.message;
   return messages[key] || (key === "Invalid login credentials" ? "كلمة مرور الإدارة غير صحيحة." : key === "Failed to fetch" ? "تعذر الاتصال بالخادم. تحققي من الإنترنت وحاولي مرة أخرى." : "حدث خطأ أثناء تنفيذ الطلب. حاولي مرة أخرى.");
 }
+function formatTeacherTimeRange(start,end){
+ const parse=(v)=>{const m=String(v||"").match(/^(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null;};
+ const a=parse(start),b=parse(end);if(a===null||b===null)return "";
+ const fmt=(n)=>{n=((n%1440)+1440)%1440;const h=Math.floor(n/60);return String(h%12||12).padStart(2,"0")+":"+String(n%60).padStart(2,"0");};
+ const suffix=(n)=>{n=((n%1440)+1440)%1440;return n>=720?"م":"ص";};
+ return suffix(a)===suffix(b)?fmt(a)+"-"+fmt(b)+" "+suffix(b):fmt(a)+" "+suffix(a)+" - "+fmt(b)+" "+suffix(b);
+}
 function capacityLabel(t) {
   if (t.remaining === null || t.remaining === undefined) return "السعة غير محددة";
   return t.remaining > 0 ? "متاح " + t.remaining + " مكان" : "اكتملت السعة";
@@ -325,7 +332,7 @@ async function showStudentRegistration(student,num){
  foundStudent={...student,student_number:num};$("issueStudentNumber").value=num;$("issueName").value=student.name;
  if(student.alreadyRegistered){$("studentResult").innerHTML='<div class="status show warn">الطالبة <b>'+safe(student.name)+'</b> مسجلة بالفعل في هذا الاختبار. لو محتاجة تعديلًا أو عندك مشكلة، استخدمي نموذج البلاغ.</div>';return;}
  const isQalun=student.riwaya==="qalun",choices=publicTeachers.filter(t=>(!isQalun||t.acceptsQalun)&&(t.remaining===null||t.remaining>0));
- const cards=choices.map(t=>'<label class="teacher" style="display:block;cursor:pointer"><span><input type="radio" name="teacherChoice" value="'+safe(t.id)+'" style="width:auto;margin-left:7px">'+safe(t.name)+'</span><div class="hint">'+(t.acceptsQalun?'<span class="tag good">تستقبل قالون</span>':'')+'<span class="tag">'+safe(capacityLabel(t))+'</span>'+(t.startTime&&t.endTime?'<span class="tag">'+safe(t.startTime)+' - '+safe(t.endTime)+'</span>':'')+'</div></label>').join("");
+ const cards=choices.map(t=>'<label class="teacher" style="display:block;cursor:pointer"><span><input type="radio" name="teacherChoice" value="'+safe(t.id)+'" style="width:auto;margin-left:7px">'+safe(t.name)+'</span><div class="hint">'+(t.acceptsQalun?'<span class="tag good">تستقبل قالون</span>':'')+'<span class="tag">'+safe(capacityLabel(t))+'</span>'+(t.startTime&&t.endTime?'<span class="tag">'+safe(formatTeacherTimeRange(t.startTime,t.endTime))+'</span>':'')+'</div></label>').join("");
  $("studentResult").innerHTML='<div class="status show ok">تم اختيار الطالبة: راجعي بياناتها ثم اختاري المعلمة.</div><div class="card" style="margin-top:10px"><h3>'+safe(student.name)+'</h3><span class="tag '+(isQalun?'warn':'good')+'">'+(isQalun?'رواية قالون':'رواية حفص')+'</span><label>اختاري المعلمة</label><div class="grid">'+(cards||'<p class="hint">لا توجد معلمات متاحات لهذه الرواية حاليًا.</p>')+'</div><div class="actions"><button id="registerBtn" class="green" type="button" '+(!choices.length?'disabled':'')+'>تأكيد التسجيل</button><button id="changeStudentBtn" class="soft" type="button">الرجوع لاختيار الاسم</button></div><div id="registerStatus" class="status"></div></div>';
  $("changeStudentBtn")?.addEventListener("click",()=>{$("lookupForm").requestSubmit();});
  $("registerBtn")?.addEventListener("click",async()=>{const selected=document.querySelector('input[name="teacherChoice"]:checked');if(!selected){status("registerStatus","اختاري المعلمة أولًا.","warn");return;}$("registerBtn").disabled=true;try{await api("register_student",{exam_id:currentExam.id,student_id:student.id,teacher_id:selected.value},false);status("registerStatus","تم تسجيل اختيارك بنجاح. احتفظي بهذه المعلومة وتابعي أي تعليمات من الإدارة.","ok");await loadPublicExam();}catch(err){status("registerStatus",readable(err),"bad");$("registerBtn").disabled=false;}});
@@ -659,8 +666,8 @@ function schedulePeriod(text){
     let ds=dr[3]||"";
     let da=timeToMin(dr[1],ds), db=timeToMin(dr[2],ds);
     if(da!==null&&db!==null){
-      if(db<=da && ds && meridiemKind(ds)==="pm" && +dr[1]<12) da=timeToMin(dr[1],"ص");
-      if(db<=da) db+=1440;
+      if(db<=da && ds && meridiemKind(ds)==="pm" && +dr[2]===12 && da>=720) db=1440;
+       else if(db<=da) db+=1440;
       return {start:da,end:db,explicit:true};
     }
   }
