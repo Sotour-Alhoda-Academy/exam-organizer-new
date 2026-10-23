@@ -612,7 +612,7 @@ function renderQalunChoices(){
  const seen=new Set(),list=[];
  parsedSchedule.forEach(x=>{if(!seen.has(x.teacherId)){seen.add(x.teacherId);list.push(x)}});
  box.innerHTML=list.map(x=>'<label class="check"><input type="checkbox" class="examQalunCheck" value="'+safe(x.teacherId)+'"><span>'+safe(x.teacherName)+'</span></label>').join("");
- box.querySelectorAll(".examQalunCheck").forEach(cb=>{cb.checked=savedQalunTeacherIds.has(cb.value);cb.addEventListener("change",()=>{if($("examSelect").value)saveQalunChoices();});});
+ box.querySelectorAll(".examQalunCheck").forEach(cb=>{cb.checked=savedQalunTeacherIds.has(cb.value);cb.addEventListener("change",()=>{if($("examSelect").value)queueQalunAutoSave();});});
 }
 function selectedExamQalun(){return [...document.querySelectorAll(".examQalunCheck:checked")].map(x=>x.value);}
 async function saveQalunChoices(){
@@ -633,6 +633,8 @@ async function saveQalunChoices(){
  finally{btn.disabled=false;}
 }
 $("saveQalunBtn").addEventListener("click",saveQalunChoices);
+let qalunAutoSaveChain=Promise.resolve();
+function queueQalunAutoSave(){qalunAutoSaveChain=qalunAutoSaveChain.then(()=>saveQalunChoices()).catch(e=>status("qalunSaveStatus",readable(e),"bad"));return qalunAutoSaveChain;}
 function examDuration(){return Number(document.querySelector('input[name="listDuration"]:checked')?.value||5);}
 function renderGeneratedGroups(groups,totalStudents=groups.reduce((n,g)=>n+(g.students||[]).length,0),qalunCount=null){
   generatedExamGroups=groups||[];
@@ -708,8 +710,8 @@ $("toggleStudentNames").addEventListener("click",()=>{
 $("clearStudentsBtn").addEventListener("click",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};$("studentsInput").value="";parsedExamStudents=[];$("studentsStatus").textContent="";$("studentsStats").innerHTML="";$("studentsPreview").innerHTML="";$("studentsPreview").classList.add("hidden");$("toggleStudentNames").textContent="👁️ إظهار أسماء الطالبات";$("toggleStudentNames").setAttribute("aria-expanded","false");$("studentIssues").innerHTML="";$("generatedLists").innerHTML="";$("listReview").innerHTML="";$("listGenerationStatus").textContent="";});
 $("undoInputsBtn").addEventListener("click",()=>{if(!previousExamInputs){status("studentsStatus","لا يوجد تعديل سابق محفوظ للتراجع إليه.","bad");return;}$("studentsInput").value=previousExamInputs.students;$("scheduleInput").value=previousExamInputs.schedule;parseExamStudents();parseSchedule();});
 $("undoScheduleBtn").addEventListener("click",()=>{if(previousExamInputs){$("scheduleInput").value=previousExamInputs.schedule;parseSchedule();}else status("scheduleStatus","لا يوجد تعديل سابق محفوظ للتراجع إليه.","bad");});
-$("selectAllQalunBtn").addEventListener("click",()=>{document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=true);if($("examSelect").value)saveQalunChoices();});
-$("clearQalunBtn").addEventListener("click",()=>{document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=false);if($("examSelect").value)saveQalunChoices();});
+$("selectAllQalunBtn").addEventListener("click",()=>{document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=true);if($("examSelect").value)queueQalunAutoSave();});
+$("clearQalunBtn").addEventListener("click",()=>{document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=false);if($("examSelect").value)queueQalunAutoSave();});
 $("generateListsBtn").addEventListener("click",generateExamLists);
 document.querySelectorAll('input[name="listDuration"]').forEach(r=>r.addEventListener("change",()=>{ $("examDuration").value=r.value; if(parsedSchedule.length)renderParsedSchedule(); }));
 
