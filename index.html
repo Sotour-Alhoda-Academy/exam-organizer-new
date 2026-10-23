@@ -664,7 +664,7 @@ function parseExamStudents(){
  lines.forEach((line,i)=>{const raw=line.trim();if(!raw)return;const hasNum=/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[🌷🎀👑🪷🌸🌺🌼🌿]*\s*[（(]?\s*[0-9٠-٩]+/.test(raw);if(!started&&!hasNum)return;
   if(hasNum){started=true;const row=examSplitLine(raw);row.forEach(x=>{x.line=i+1;parsedExamStudents.push(x)});lastGroup=row[0]?.groupNo||"";lastGroupRiwayah=row[0]?.riwayah||"حفص";awaitingPartner=!!lastGroup&&row.length===1;return;}
   if(lastGroup&&/^(قالون|قولون|حفص|ورش)$/i.test(raw)){if(/قالون|قولون/.test(raw))lastGroupRiwayah="قالون";else if(/ورش/.test(raw))lastGroupRiwayah="ورش";parsedExamStudents.filter(x=>x.groupNo===lastGroup).forEach(x=>x.riwayah=lastGroupRiwayah);return;}
-  if(awaitingPartner&&lastGroup){const name=examCleanName(raw);if(name&&!/^(المعلمة|قائمة اختبار|الاختبار)$/i.test(name)){parsedExamStudents.push({name,student_number:lastGroup,riwayah:lastGroupRiwayah,groupNo:lastGroup,line:i+1});awaitingPartner=false;}}
+  if(awaitingPartner&&lastGroup){const name=examCleanName(raw);if(!name){awaitingPartner=false;return;}if(!/^(المعلمة|قائمة اختبار|الاختبار|ربنا|بالتوفيق|موفقه?)$/i.test(name)){parsedExamStudents.push({name,student_number:lastGroup,riwayah:lastGroupRiwayah,groupNo:lastGroup,line:i+1});awaitingPartner=false;}}
  });
  const groups={};parsedExamStudents.forEach(st=>{if(st.groupNo){groups[st.groupNo]||="حفص";if(st.riwayah==="قالون")groups[st.groupNo]="قالون";else if(st.riwayah==="ورش"&&groups[st.groupNo]!=="قالون")groups[st.groupNo]="ورش";}});parsedExamStudents.forEach(st=>{if(st.groupNo)st.riwayah=groups[st.groupNo];});
  const dup={};parsedExamStudents.forEach(st=>(dup[examNorm(st.name)]||=[]).push(st));const dups=Object.values(dup).filter(a=>a.length>1).length,q=parsedExamStudents.filter(x=>x.riwayah==="قالون").length;
