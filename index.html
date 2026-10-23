@@ -1012,7 +1012,10 @@ async function saveAllExamWorkspace(publish=false){
  const btn=publish?$("publishExamBtn"):$("saveAllWorkspaceBtn"),originalText=btn.textContent;btn.disabled=true;btn.textContent=publish?"جارٍ حفظ البيانات ونشر الاختبار...":"جارٍ حفظ بيانات الاختبار...";
  const locked=[...document.querySelectorAll('#examSelect,#newExamBtn,#examTitle,#examDate,#examDuration,#registrationState,#examInstructions,#studentsInput,#scheduleInput,input[name="listDuration"],.examQalunCheck')],previous=locked.map(el=>el.disabled);locked.forEach(el=>el.disabled=true);
  try{
+  const existingQalunControls=document.querySelectorAll(".examQalunCheck").length>0;
+  const selectedQalunBeforeSave=new Set(existingQalunControls?selectedExamQalun():savedQalunTeacherIds);
   parseExamStudents();parseSchedule();
+  document.querySelectorAll(".examQalunCheck").forEach(cb=>{cb.checked=selectedQalunBeforeSave.has(cb.value);});
   if(!parsedExamStudents.length)throw new Error("الصقي قائمة الطالبات أولًا.");
   if(parsedExamStudents.some(x=>!x.student_number))throw new Error("فيه طالبة بدون رقم واضح. راجعي القائمة قبل الحفظ.");
   if(!parsedSchedule.length)throw new Error("الصقي رسالة مواعيد المعلمات واضغطي «تحليل المواعيد» أولًا.");
