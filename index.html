@@ -661,7 +661,7 @@ $("examForm").addEventListener("submit",async e=>{
   e.preventDefault();
   try {
     const r=await api("admin_save_exam",{exam_id:$("editExamId").value||undefined,title:$("examTitle").value,exam_date:$("examDate").value||null,default_duration_minutes:Number($("examDuration").value),status:($("editExamId").value?(exams.find(x=>x.id===$("editExamId").value)?.status||"draft"):"draft"),registration_state:$("registrationState").value,instructions:$("examInstructions").value});
-    status("examFormStatus","تم حفظ الاختبار.","ok"); await loadAdmin(); $("examSelect").value=r.exam.id;fillExamForm(r.exam);await loadDashboard();await renderTeachers();await loadPublicExam();showAdminView("saved");
+    status("examFormStatus","تم حفظ الاختبار.","ok"); await loadAdmin(); $("examSelect").value=r.exam.id;fillExamForm(r.exam);await loadDashboard();await renderTeachers();await loadPublicExam();showAdminView("saved-details");
   } catch(err){status("examFormStatus",readable(err),"bad");}
 });
 $("teacherForm").addEventListener("submit",async e=>{
