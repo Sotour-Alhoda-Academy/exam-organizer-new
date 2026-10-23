@@ -711,11 +711,6 @@ async function generateExamLists(){
   // وزّعي حفص/الروايات الأخرى ككتل متتابعة حسب ترتيب المعلمات في جدول المواعيد.
   let cursor=0;
   for(const group of groups){
-    if(group.riwayah==="قالون" || qids.has(group.teacherId)){
-      // المعلمات المحددات لقالون لا تستقبل حفص في هذه المرحلة إلا إذا كان عندها سعة
-      // ولم تكن مخصصة حصريًا لقالون. في هذه الواجهة اختيار قالون يحدد الاستقبال.
-      if(qids.has(group.teacherId))continue;
-    }
     const remainingCapacity=Math.max(0,group.capacity-group.students.length);
     for(let n=0;n<remainingCapacity&&cursor<unregisteredNormal.length;n++,cursor++){
       group.students.push(unregisteredNormal[cursor].st);
