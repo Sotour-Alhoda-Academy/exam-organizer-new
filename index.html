@@ -646,12 +646,25 @@ function renderGeneratedGroups(groups,totalStudents=groups.reduce((n,g)=>n+(g.st
   const qalun=qalunCount===null?generatedExamGroups.reduce((n,g)=>n+(g.students||[]).filter(st=>st.riwayah==="قالون").length,0):qalunCount;
   $("listReview").innerHTML=generatedExamGroups.length?'<div class="review"><b>مراجعة التوزيع</b><div class="stats"><div class="stat"><b>'+totalStudents+'</b> طالبة</div><div class="stat"><b>'+generatedExamGroups.length+'</b> قائمة</div><div class="stat"><b>'+qalun+'</b> قالون</div></div>'+generatedExamGroups.map(g=>'<div class="capacity-row"><span>'+safe(g.teacherName)+'</span><span>'+g.students.length+' / '+g.capacity+'</span></div>').join("")+'</div>':'';
   $("generatedLists").innerHTML=generatedExamGroups.map(g=>{
-    const t=teachers.find(x=>x.id===g.teacherId),name=(t&&(t.full_name||t.name))||g.teacherName,blank="\\n\\n";
-    let output="*🌷( قائمه اختبار)🌷*"+blank+"*المعلمة: "+name+"*"+blank+"🕐 "+scheduleFmt(g.students[0].start)+" - "+scheduleFmt(g.students[g.students.length-1].end)+blank+"🔢 عدد الطالبات: "+g.students.length+blank+"•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈"+blank;
-    output+=g.students.map((st,i)=>(i+1)+") "+st.name+(st.riwayah==="قالون"?" — قالون":"")+"\\n"+scheduleFmt(st.start)+" - "+scheduleFmt(st.end)).join(blank);
-    output+=blank+"•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈•"+blank+"*المعلمه/ "+name+"*"+blank+"*وسائل التواصل المتاحة:*"+blank;
-    if(t){if(t.phone)output+="*اتصال*\\n"+t.phone+blank;if(t.telegram)output+="▪ تليجرام\\n"+t.telegram+blank;if(t.messenger)output+="▪ مسنجر\\n"+t.messenger+blank;if(t.whatsapp)output+="▪ واتس\\n"+t.whatsapp+blank;if(t.notes)output+=t.notes+blank;}
-    output+="🌷 *المواعيد بتوقيت مصر*🌷"+blank+"🌷 *برجاء الالتزام بالمواعيد*🌷"+blank+"•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈";
+    const t=teachers.find(x=>x.id===g.teacherId),name=(t&&(t.full_name||t.name))||g.teacherName,blank="\n\n";
+    const contactValue=(value)=>value&&String(value).trim()?String(value).trim():"لا يوجد";
+    let output="*🌷( قائمه اختبار)🌷*"+blank;
+    output+="*المعلمة: "+name+"*"+blank;
+    output+="🕐 "+scheduleFmt(g.students[0].start)+" - "+scheduleFmt(g.students[g.students.length-1].end)+blank;
+    output+="🔢 عدد الطالبات: "+g.students.length+blank;
+    output+="•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈"+blank;
+    output+=g.students.map((st,i)=>(i+1)+") "+st.name+(st.riwayah==="قالون"?" — قالون":"")+"\n"+scheduleFmt(st.start)+" - "+scheduleFmt(st.end)).join(blank);
+    output+=blank+"•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈•"+blank;
+    output+="*المعلمه/ "+name+"*"+blank;
+    output+="*وسائل التواصل المتاحة:*"+blank;
+    output+="*اتصال*\n"+contactValue(t&&t.phone)+blank;
+    output+="▪ تليجرام\n"+contactValue(t&&t.telegram)+blank;
+    output+="▪ مسنجر\n"+contactValue(t&&t.messenger)+blank;
+    output+="▪ واتس\n"+contactValue(t&&t.whatsapp)+blank;
+    if(t&&t.notes&&String(t.notes).trim())output+=String(t.notes).trim()+blank;
+    output+="🌷 *المواعيد بتوقيت مصر*🌷"+blank;
+    output+="🌷 *برجاء الالتزام بالمواعيد*🌷"+blank;
+    output+="•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈";
     return '<div class="generated-list"><h3>🌷 '+safe(name)+' — '+g.students.length+' طالبة</h3><div class="actions"><button class="soft" type="button" data-copy-list>📋 نسخ القائمة</button></div><pre>'+safe(output)+'</pre></div>';
   }).join("");
   $("generatedLists").querySelectorAll("[data-copy-list]").forEach(btn=>btn.addEventListener("click",async()=>{const txt=btn.closest(".generated-list").querySelector("pre").textContent;try{await navigator.clipboard.writeText(txt);btn.textContent="✓ تم النسخ"}catch(e){const area=document.createElement("textarea");area.value=txt;document.body.appendChild(area);area.select();document.execCommand("copy");area.remove();btn.textContent="✓ تم النسخ"}}));
