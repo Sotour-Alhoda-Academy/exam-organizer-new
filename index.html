@@ -22,6 +22,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid #d9bce6;border-color:v
 textarea{min-height:100px;resize:vertical}
 button{border:0;border-radius:10px;padding:11px 14px;font:inherit;font-weight:bold;cursor:pointer}
 button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);color:white}.soft{background:#eee8f2;color:var(--p)}.green{background:#218653;color:white}.red{background:#b42335;color:white}.gray{background:#f0edf1;color:#514957}
+.qalun-save-status{display:none;margin:0;padding:7px 10px;font-size:12px;line-height:1.5;max-width:100%}.qalun-save-status.show{display:inline-block}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{flex:0 0 auto}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
 .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px}
@@ -189,7 +190,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <h2>📖 3) معلمات طالبات قالون</h2>
 <p class="hint">اختاري المعلمات التي تريدين أن تستقبل طالبات قالون في هذا الاختبار. حللي المواعيد أولًا.</p>
 <div id="qalunTeachers" class="checks">حللي المواعيد أولًا.</div>
-<div class="actions"><button type="button" id="selectAllQalunBtn" class="green">☑ اختيار الكل</button><button type="button" id="clearQalunBtn" class="gray">إلغاء الكل</button><button type="button" id="saveQalunBtn" class="primary">💾 حفظ اختيار معلمات قالون</button></div>
+<div class="actions"><button type="button" id="selectAllQalunBtn" class="green">☑ اختيار الكل</button><button type="button" id="clearQalunBtn" class="gray">إلغاء الكل</button><button type="button" id="saveQalunBtn" class="primary">💾 حفظ اختيار معلمات قالون</button><span id="qalunSaveStatus" class="status qalun-save-status" role="status" aria-live="polite"></span></div>
 </div>
 
 <div class="card" id="saveAllWorkspaceCard"><h2>💾 حفظ الاختبار وإتاحته للطالبات</h2><p class="hint">يحفظ قائمة الطالبات ورسالة المواعيد واختيارات قالون ومواعيد المعلمات وإعدادات القوائم، ثم ينشر الاختبار للطالبات.</p><div class="actions"><button type="button" id="saveAllWorkspaceBtn" class="green">💾 حفظ كل البيانات ونشر الاختبار</button></div><div id="saveAllWorkspaceStatus" class="status"></div></div>
@@ -322,27 +323,35 @@ async function loadPublicExam(requestedExamId=selectedPublicExamId) {
     if (loadSeq !== publicExamLoadSeq) return;
     publicExams = listData.exams || [];
     if (!publicExams.length) {
-      currentExam=null; publicTeachers=[];
+      currentExam=null; publicTeachers=[]; selectedPublicExamId="";
       $("publicExamPickerWrap").classList.add("hidden");
       $("publicExamInfo").classList.add("hidden"); $("lookupForm").classList.add("hidden");
       $("studentResult").innerHTML="";
       status("publicExamStatus","لا يوجد اختبار منشور للطالبات حاليًا.","warn");
       return;
     }
-    selectedPublicExamId = publicExams.some(x=>x.id===requestedExamId) ? requestedExamId : publicExams[0].id;
-    $("publicExamPickerWrap").classList.toggle("hidden",publicExams.length<2);
-    $("publicExamPicker").innerHTML=publicExams.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+(x.exam_date?' · '+safe(x.exam_date):'')+'</option>').join("");
+    selectedPublicExamId = publicExams.some(x=>x.id===requestedExamId) ? requestedExamId : "";
+    $("publicExamPickerWrap").classList.remove("hidden");
+    $("publicExamPicker").innerHTML='<option value="">اختاري الاختبار أولًا</option>'+publicExams.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+(x.exam_date?' · '+safe(x.exam_date):'')+'</option>').join("");
     $("publicExamPicker").value=selectedPublicExamId;
+    $("studentResult").innerHTML="";
+    $("studentNumber").value="";
+    currentExam=null; publicTeachers=[];
+    $("publicExamInfo").classList.add("hidden");
+    $("lookupForm").classList.add("hidden");
+    if (!selectedPublicExamId) {
+      status("publicExamStatus","اختاري الاختبار الخاص بكِ أولًا لعرض بياناته وإتاحة التسجيل.","info");
+      return;
+    }
     const data = await api("public_exam",{exam_id:selectedPublicExamId},false);
     if (loadSeq !== publicExamLoadSeq) return;
     currentExam=data.exam; publicTeachers=data.teachers||[];
-    $("studentResult").innerHTML="";
     if (!currentExam) {
       status("publicExamStatus","الاختبار المحدد غير متاح حاليًا.","warn");
       $("publicExamInfo").classList.add("hidden"); $("lookupForm").classList.add("hidden"); return;
     }
     $("publicExamInfo").classList.remove("hidden");
-    $("publicExamInfo").innerHTML = '<div class="stats"><div class="stat"><b>'+safe(currentExam.title)+'</b><span>الاختبار</span></div><div class="stat"><b>'+safe(currentExam.exam_date||"لم يُحدد")+'</b><span>التاريخ</span></div><div class="stat"><b>'+safe(currentExam.default_duration_minutes)+' دقائق</b><span>مدة الطالبة</span></div></div>' + (currentExam.instructions?'<p class="hint">'+safe(currentExam.instructions)+'</p>':"");
+    $("publicExamInfo").innerHTML = '<div class="stats"><div class="stat"><b>'+safe(currentExam.title)+'</b><span>الاختبار</span></div><div class="stat"><div class="stat"><b>'+safe(currentExam.exam_date||"لم يُحدد")+'</b><span>التاريخ</span></div><div class="stat"><b>'+safe(currentExam.default_duration_minutes)+' دقائق</b><span>مدة الطالبة</span></div></div>' + (currentExam.instructions?'<p class="hint">'+safe(currentExam.instructions)+'</p>':"");
     if (currentExam.registration_state === "open") {
       status("publicExamStatus","التسجيل مفتوح في الاختبار المحدد. أدخلي رقم الطالبة للمتابعة.","ok"); $("lookupForm").classList.remove("hidden");
     } else {
@@ -596,8 +605,8 @@ function renderQalunChoices(){
 function selectedExamQalun(){return [...document.querySelectorAll(".examQalunCheck:checked")].map(x=>x.value);}
 async function saveQalunChoices(){
  const examId=$("examSelect").value;
- if(!examId){status("scheduleStatus","اختاري الاختبار أولًا.","warn");return;}
- if(!parsedSchedule.length){status("scheduleStatus","حللي المواعيد أو استرجعي المواعيد المحفوظة أولًا.","warn");return;}
+ if(!examId){status("qalunSaveStatus","اختاري الاختبار أولًا.","warn");return;}
+ if(!parsedSchedule.length){status("qalunSaveStatus","حللي المواعيد أو استرجعي المواعيد المحفوظة أولًا.","warn");return;}
  const selected=new Set(selectedExamQalun()),duration=Number($("examDuration").value)===10?10:5,grouped=new Map();
  parsedSchedule.forEach(slot=>{const cur=grouped.get(slot.teacherId);if(!cur)grouped.set(slot.teacherId,{...slot});else{cur.start=Math.min(cur.start,slot.start);cur.end=Math.max(cur.end,slot.end);}});
  const btn=$("saveQalunBtn");btn.disabled=true;
@@ -607,8 +616,8 @@ async function saveQalunChoices(){
   }
   savedQalunTeacherIds=selected;
   await loadDashboard();await loadPublicExam();
-  status("scheduleStatus","تم حفظ اختيار معلمات قالون وربطه بواجهة الطالبات.","ok");
- }catch(e){status("scheduleStatus",readable(e),"bad");}
+  status("qalunSaveStatus","تم حفظ اختيار معلمات قالون وربطه بواجهة الطالبات.","ok");
+ }catch(e){status("qalunSaveStatus",readable(e),"bad");}
  finally{btn.disabled=false;}
 }
 $("saveQalunBtn").addEventListener("click",saveQalunChoices);
@@ -753,8 +762,8 @@ function schedulePeriod(text){
     let ds=dr[3]||"";
     let da=timeToMin(dr[1],ds), db=timeToMin(dr[2],ds);
     if(da!==null&&db!==null){
-      if(db<=da && ds && meridiemKind(ds)==="pm" && +dr[2]===12 && da>=720) db=1440;
-       else if(db<=da) db+=1440;
+      if(db<=da && ds && meridiemKind(ds)==="pm" && +dr[1]<12) da=timeToMin(dr[1],"ص");
+      if(db<=da) db+=1440;
       return {start:da,end:db,explicit:true};
     }
   }
@@ -829,14 +838,10 @@ const colonRange=new RegExp(COLONNUM+"\\s*:\\s*"+COLONNUM+"\\s*("+P+")?","i");
     let b=timeToMin(m[3].replace(/\s/g,""),p2);
     if(a!==null&&b!==null){
       if(b<=a){
-        /* إذا كُتب الطرفان مساءً وانتهى المدى عند 12، فالمقصود منتصف الليل لا ظهر اليوم التالي. */
-        if(m[2] && m[4] && meridiemKind(m[2])==="pm" && meridiemKind(m[4])==="pm" && Number(m[3].replace(/\s/g,"").split(".")[0])===12 && a>=12*60) b=1440;
-        else {
-          /* لو كتب 10 - 8 م فالمقصود عادة 10 صباحًا إلى 8 مساءً،
-             لأن الدلالة المسائية موجودة عند النهاية فقط. */
-          if(!m[2] && m[4] && meridiemKind(m[4])==="pm" && a<12*60) a=timeToMin(m[1].replace(/\s/g,""),"ص");
-          if(b<=a)b+=1440;
-        }
+        /* لو كتب 10 - 8 م فالمقصود عادة 10 صباحًا إلى 8 مساءً،
+           لأن الدلالة المسائية موجودة عند النهاية فقط. */
+        if(!m[2] && m[4] && meridiemKind(m[4])==="pm" && a<12*60) a=timeToMin(m[1].replace(/\s/g,""),"ص");
+        if(b<=a)b+=1440;
       }
       return {start:a,end:b,explicit:true};
     }
