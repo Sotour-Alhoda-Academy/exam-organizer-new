@@ -141,7 +141,6 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
   <button type="button" class="admin-home-option" id="openNewExamView"><span class="admin-home-icon">＋</span><strong>اختبار جديد</strong><small>إعداد اختبار وقائمة الطالبات والمواعيد</small></button>
   <button type="button" class="admin-home-option" id="openSavedExamView"><span class="admin-home-icon">📋</span><strong>اختبار مسجل</strong><small>عرض الاختبارات المحفوظة وتعديل بياناتها</small></button>
   <button type="button" class="admin-home-option" id="openTeachersView"><span class="admin-home-icon">👩‍🏫</span><strong>إدارة المعلمات</strong><small>إضافة معلمة أو تعديل بياناتها وحذفها</small></button>
-  <div class="actions"><button id="logoutBtn" class="gray" type="button">تسجيل الخروج</button></div>
 </div>
 <div id="examAdminHeader" class="card hidden">
 <div class="teacher-head"><button id="backToAdminMenu" class="gray" type="button">↩️ القائمة الرئيسية</button><button id="toggleExamForm" class="exam-details-toggle" type="button" aria-expanded="true" aria-controls="examFormPanel">بيانات الاختبار</button></div>
@@ -523,7 +522,6 @@ $("loginForm").addEventListener("submit",async e=>{
   await refreshSession();
   if(accessToken) status("adminStatus","تم تسجيل الدخول. لو ظهرت رسالة رفض صلاحيات، فالحساب يحتاج إضافته إلى قائمة الإدارة.","ok");
 });
-$("logoutBtn").addEventListener("click",async()=>{await supabase.auth.signOut();accessToken=null;dashboard=null;await refreshSession();});
 
 $("openNewExamView").addEventListener("click",()=>{showAdminView("new");clearWorkspaceForNewExam();});
 $("openSavedExamView").addEventListener("click",async()=>{$("examSelect").value="";showAdminView("saved");await loadAdmin();showAdminView("saved");});
@@ -750,12 +748,13 @@ function parseExamStudents(){
  $("studentsStatus").className="status "+(parsedExamStudents.length?"ok":"bad");$("studentsStatus").textContent=parsedExamStudents.length?"تم فصل "+parsedExamStudents.length+" طالبة. الرقم قد يكون مشتركًا بين طالبتين. راجعي الأسماء والروايات قبل إنشاء القوائم.":"لم يتم فصل أي طالبة. تأكدي من ترقيم الأسطر أو وجود فاصل واضح بين الطالبتين.";if(!parsedExamStudents.length)$("studentIssues").innerHTML="";return parsedExamStudents;
 }
 function renderQalunChoices(){
- const box=$("qalunTeachers");
+const box=$("qalunTeachers");
+  if(box.querySelector(".examQalunCheck"))savedQalunTeacherIds=new Set(selectedExamQalun());
  if(!parsedSchedule.length){box.textContent="حللي المواعيد أولًا.";return;}
  const seen=new Set(),list=[];
  parsedSchedule.forEach(x=>{if(!seen.has(x.teacherId)){seen.add(x.teacherId);list.push(x)}});
  box.innerHTML=list.map(x=>'<label class="check"><input type="checkbox" class="examQalunCheck" value="'+safe(x.teacherId)+'"><span>'+safe(x.teacherName)+'</span></label>').join("");
- box.querySelectorAll(".examQalunCheck").forEach(cb=>{cb.checked=savedQalunTeacherIds.has(cb.value);cb.addEventListener("change",()=>{if($("examSelect").value)queueQalunAutoSave();});});
+box.querySelectorAll(".examQalunCheck").forEach(cb=>{cb.checked=savedQalunTeacherIds.has(cb.value);cb.addEventListener("change",()=>{savedQalunTeacherIds=new Set(selectedExamQalun());if($("examSelect").value)queueQalunAutoSave();});});
 }
 function selectedExamQalun(){return [...document.querySelectorAll(".examQalunCheck:checked")].map(x=>x.value);}
 async function saveQalunChoices(){
@@ -864,7 +863,12 @@ async function generateExamLists(){
 }
 ["studentsInput","scheduleInput"].forEach(id=>$(id).addEventListener("focus",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};}));
 async function syncParsedStudentsToExam(){const examId=$("examSelect").value;if(!examId){status("studentsStatus","احفظي بيانات الاختبار واختاريه أولًا قبل ربط القائمة بواجهة الطالبات.","warn");return;}if(!parsedExamStudents.length)return;const missing=parsedExamStudents.filter(x=>!x.student_number);if(missing.length){status("studentsStatus","فيه "+missing.length+" طالبة لم أستطع تحديد رقمها من القائمة. راجعي ترقيمها قبل الحفظ.","warn");return;}try{const students=parsedExamStudents.map(x=>({student_number:x.student_number,student_name:x.name,riwaya:/قالون/.test(x.riwayah)?"qalun":"hafs"}));const result=await api("admin_import_students",{exam_id:examId,students});status("studentsStatus","تم تحليل "+parsedExamStudents.length+" طالبة وحفظ "+result.saved+" سجلًا. الأرقام المشتركة مدعومة الآن.","ok");await loadDashboard();}catch(e){status("studentsStatus","تم التحليل لكن تعذر ربط القائمة بواجهة الطالبات: "+readable(e),"bad");}}
-$("parseStudentsBtn").addEventListener("click",async()=>{parseExamStudents();await syncParsedStudentsToExam();});
+$("parseStudentsBtn").addEventListener("click",async()=>{
+  parseExamStudents();
+  if(!parsedExamStudents.length)return;
+  if(!$("examSelect").value){status("studentsStatus","تم تحليل القائمة. احفظي بيانات الاختبار من زر الحفظ أسفل الصفحة لربطها بواجهة الطالبات.","ok");return;}
+  await syncParsedStudentsToExam();
+});
 $("toggleStudentNames").addEventListener("click",()=>{
  const box=$("studentsPreview"),btn=$("toggleStudentNames"),show=box.classList.contains("hidden");
  box.classList.toggle("hidden",!show);btn.setAttribute("aria-expanded",String(show));
@@ -1140,11 +1144,35 @@ function parseSchedule(){
   }
   renderParsedSchedule();
 }
+function renderScheduleIssues(){
+ const box=$("scheduleIssues");
+ if(!scheduleIssues.length){box.innerHTML="";return;}
+ const options=teachers.filter(t=>t.is_active!==false).map(t=>'<option value="'+safe(t.id)+'">'+safe(t.full_name||t.name||"")+'</option>').join("");
+ box.innerHTML='<div class="review"><b>⚠️ سطور تحتاج مراجعة</b><div class="hint">يمكنك تعديل السطر وإعادة تحليله، أو اختيار المعلمة وتحديد الوقت يدويًا، أو تجاهل السطر إذا لم يكن موعدًا مطلوبًا.</div>'+scheduleIssues.map((it,k)=>'<div class="schedule-issue"><b>السطر '+(it.line+1)+'</b><div>'+safe(it.text)+'</div><div class="hint">'+safe(it.reason)+'</div><label class="hint" for="scheduleTeacherFix_'+k+'">اختيار المعلمة الصحيحة (اختياري)</label><select id="scheduleTeacherFix_'+k+'"><option value="">— اختاري معلمة —</option>'+options+'</select><input id="scheduleFix_'+k+'" value="'+safe(it.text)+'" placeholder="أو اكتبي السطر الصحيح كاملًا"><div class="manual-time"><span class="hint">⏰ أو حددي الوقت يدويًا:</span><input id="scheduleStart_'+k+'" type="time" title="بداية الموعد"><span>إلى</span><input id="scheduleEnd_'+k+'" type="time" title="نهاية الموعد"><button type="button" class="green" data-schedule-time="'+k+'">⏰ اعتماد الوقت</button></div><div class="actions"><button type="button" class="green" data-schedule-fix="'+k+'">✏️ تعديل وإعادة التحليل</button><button type="button" class="gray" data-schedule-ignore="'+k+'">🗑️ تجاهل السطر</button></div></div>').join("")+'</div>';
+ box.querySelectorAll("[data-schedule-fix]").forEach(btn=>btn.addEventListener("click",()=>fixScheduleIssue(Number(btn.dataset.scheduleFix))));
+ box.querySelectorAll("[data-schedule-time]").forEach(btn=>btn.addEventListener("click",()=>fixScheduleIssueWithTime(Number(btn.dataset.scheduleTime))));
+ box.querySelectorAll("[data-schedule-ignore]").forEach(btn=>btn.addEventListener("click",()=>ignoreScheduleIssue(Number(btn.dataset.scheduleIgnore))));
+}
+function fixScheduleIssue(k){
+ const it=scheduleIssues[k];if(!it)return;
+ const input=$("scheduleFix_"+k),select=$("scheduleTeacherFix_"+k);let value=input?.value??"",teacherId=select?.value||"";
+ if(teacherId){const teacher=teachers.find(t=>String(t.id)===String(teacherId));if(teacher){const old=it.text,full=teacher.full_name||teacher.name||"";let replaced=false;for(const candidate of teachers){const name=candidate.full_name||candidate.name||"";if(name&&old.includes(name)){value=old.replace(name,full);replaced=true;break;}}if(!replaced){const m=old.match(/^(\s*[0-9٠-٩]+\s*[-_/.)：:*]*\s*)/);value=(m?m[1]:"")+full+" "+old.slice(m?m[0].length:0).trim();}}}
+ const rows=$("scheduleInput").value.split(/\r?\n/);rows[it.line]=value;$("scheduleInput").value=rows.join("\n");parseSchedule();
+}
+function fixScheduleIssueWithTime(k){
+ const it=scheduleIssues[k];if(!it)return;const start=$("scheduleStart_"+k)?.value||"",end=$("scheduleEnd_"+k)?.value||"",teacherId=$("scheduleTeacherFix_"+k)?.value||"";
+ if(!start||!end){status("scheduleStatus","حددي وقت البداية ووقت النهاية أولًا.","warn");return;}if(!teacherId){status("scheduleStatus","اختاري المعلمة الصحيحة أولًا.","warn");return;}
+ const teacher=teachers.find(t=>String(t.id)===String(teacherId));if(!teacher)return;const toArabicTime=v=>{const p=v.split(":").map(Number);return scheduleFmt(p[0]*60+p[1]);};
+ const rows=$("scheduleInput").value.split(/\r?\n/);const prefix=it.text.match(/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[（(]?\s*[0-9٠-٩]+\s*[)）.]?\s*/u);rows[it.line]=(prefix?prefix[0]:"")+(teacher.full_name||teacher.name)+" "+toArabicTime(start)+" - "+toArabicTime(end);$("scheduleInput").value=rows.join("\n");parseSchedule();
+}
+function ignoreScheduleIssue(k){const it=scheduleIssues[k];if(!it)return;const rows=$("scheduleInput").value.split(/\r?\n/);rows[it.line]="";$("scheduleInput").value=rows.join("\n");parseSchedule();}
+
+
 function renderParsedSchedule(){
   renderQalunChoices();
   const unique=new Set(parsedSchedule.map(x=>x.teacherId)),total=parsedSchedule.reduce((a,x)=>a+x.end-x.start,0),duration=Number($("examDuration").value)||5;
   $("scheduleStats").innerHTML=parsedSchedule.length?'<div class="stat"><b>'+parsedSchedule.length+'</b> موعد مقروء</div><div class="stat"><b>'+unique.size+'</b> معلمة</div><div class="stat"><b>'+Math.floor(total/60)+'س '+(total%60?total%60+'د':'')+'</b> إجمالي الوقت</div><div class="stat"><b>'+parsedSchedule.reduce((a,x)=>a+Math.floor((x.end-x.start)/duration),0)+'</b> سعة تقريبية</div>':'';
-  $("scheduleIssues").innerHTML=scheduleIssues.length?'<div class="review"><b>سطور تحتاج مراجعة</b>'+scheduleIssues.map(x=>'<div class="schedule-issue"><b>السطر '+(x.line+1)+'</b><div>'+safe(x.text)+'</div><div class="hint">'+safe(x.reason)+'</div></div>').join('')+'</div>':'';
+renderScheduleIssues();
   $("schedulePreview").innerHTML=parsedSchedule.length?'<table class="schedule-preview-table"><thead><tr><th>المعلمة</th><th>من</th><th>إلى</th><th>السعة</th></tr></thead><tbody>'+parsedSchedule.map(x=>'<tr><td>'+safe(x.teacherName)+'</td><td>'+scheduleFmt(x.start)+'</td><td>'+scheduleFmt(x.end)+'</td><td>'+Math.floor((x.end-x.start)/duration)+'</td></tr>').join('')+'</tbody></table>':'';
   $("saveScheduleBtn").disabled=!parsedSchedule.length||!$("examSelect").value;
   if(!parsedSchedule.length)status("scheduleStatus","لم أتعرف على أي موعد صالح. تأكدي أن أسماء المعلمات موجودة في قائمة المعلمات المحفوظة.","bad");
