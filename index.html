@@ -351,7 +351,7 @@ async function loadPublicExam(requestedExamId=selectedPublicExamId) {
       $("publicExamInfo").classList.add("hidden"); $("lookupForm").classList.add("hidden"); return;
     }
     $("publicExamInfo").classList.remove("hidden");
-    $("publicExamInfo").innerHTML = '<div class="stats"><div class="stat"><b>'+safe(currentExam.title)+'</b><span>الاختبار</span></div><div class="stat"><div class="stat"><b>'+safe(currentExam.exam_date||"لم يُحدد")+'</b><span>التاريخ</span></div><div class="stat"><b>'+safe(currentExam.default_duration_minutes)+' دقائق</b><span>مدة الطالبة</span></div></div>' + (currentExam.instructions?'<p class="hint">'+safe(currentExam.instructions)+'</p>':"");
+    $("publicExamInfo").innerHTML = '<div class="stats"><div class="stat"><b>'+safe(currentExam.title)+'</b><span>الاختبار</span></div><div class="stat"><b>'+safe(currentExam.exam_date||"لم يُحدد")+'</b><span>التاريخ</span></div><div class="stat"><b>'+safe(currentExam.default_duration_minutes)+' دقائق</b><span>مدة الطالبة</span></div></div>' + (currentExam.instructions?'<p class="hint">'+safe(currentExam.instructions)+'</p>':"");
     if (currentExam.registration_state === "open") {
       status("publicExamStatus","التسجيل مفتوح في الاختبار المحدد. أدخلي رقم الطالبة للمتابعة.","ok"); $("lookupForm").classList.remove("hidden");
     } else {
