@@ -28,6 +28,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 .two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px}
 .status{display:none;margin-top:12px;border-radius:10px;padding:10px 12px;font-size:13px;white-space:pre-wrap}.status.show{display:block}.status.ok{background:#e7f7ed;color:#17643c}.status.warn{background:#fff4d8;color:#815500}.status.bad{background:#fdebed;color:#9f1d2c}.status.info{background:#f0e8f5;color:#5d2676}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin:12px 0}.stat{background:#f8f2fb;border-radius:12px;text-align:center;padding:12px}.stat b{display:block;color:var(--p);font-size:23px}
+.dashboard-stats-row{display:flex;align-items:flex-start;gap:8px}.dashboard-stats-row #dashboardStats{flex:1;min-width:0}.dashboard-refresh-button{flex:0 0 40px;width:40px;height:40px;padding:0;margin-top:12px;font-size:24px;line-height:1;border-radius:12px}
 .teacher{border:1px solid var(--line);border-radius:13px;padding:12px;background:#fff}.teacher-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.teacher-name{font-weight:bold;color:var(--p)}.tag{display:inline-block;background:#eee8f2;color:var(--p);border-radius:20px;padding:3px 8px;font-size:11px;margin:3px 2px}.tag.good{background:#e6f6ed;color:#16794a}.tag.warn{background:#fff1cd;color:#8a5b00}
 .table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px;min-width:520px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}th{background:#faf6fc;color:var(--p)}
 .issue{border:1px solid #eadbb0;background:#fffaf0;border-radius:12px;padding:12px;margin-top:8px}.issue small{color:var(--muted)}
@@ -142,6 +143,12 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
   <button type="button" class="admin-home-option" id="openSavedExamView"><span class="admin-home-icon">📋</span><strong>اختبار مسجل</strong><small>عرض الاختبارات المحفوظة وتعديل بياناتها</small></button>
   <button type="button" class="admin-home-option" id="openTeachersView"><span class="admin-home-icon">👩‍🏫</span><strong>إدارة المعلمات</strong><small>إضافة معلمة أو تعديل بياناتها وحذفها</small></button>
 </div>
+<div id="examPickerArea" class="card hidden">
+<div class="section-action-head"><h2>📋 الاختبارات المسجلة</h2><button type="button" class="soft" id="backFromSavedPicker">↩️ القائمة الرئيسية</button></div>
+<label for="examSelect">اختاري الاختبار المحفوظ</label>
+<select id="examSelect"><option value="">لا توجد اختبارات محفوظة</option></select>
+
+</div>
 <div id="examAdminHeader" class="card hidden">
 <div class="teacher-head"><button id="backToAdminMenu" class="gray" type="button">↩️ القائمة الرئيسية</button><button id="toggleExamForm" class="exam-details-toggle" type="button" aria-expanded="true" aria-controls="examFormPanel">بيانات الاختبار</button></div>
 <div id="examFormPanel">
@@ -162,14 +169,9 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div id="examFormStatus" class="status"></div>
 </div>
 <div id="adminStatus" class="status"></div>
-<div id="dashboardStats" class="stats"></div>
+<div class="dashboard-stats-row"><div id="dashboardStats" class="stats"></div><button type="button" id="refreshDashboardStats" class="soft dashboard-refresh-button" title="تحديث الإحصائيات" aria-label="تحديث الإحصائيات">↻</button></div>
 </div>
-<div id="examPickerArea" class="card hidden">
-<div class="section-action-head"><h2>📋 الاختبارات المسجلة</h2><button type="button" class="soft" id="backFromSavedPicker">↩️ القائمة الرئيسية</button></div>
-<label for="examSelect">اختاري الاختبار المحفوظ</label>
-<select id="examSelect"><option value="">لا توجد اختبارات محفوظة</option></select>
 
-</div>
 
 <div class="card exam-workspace-section" id="guide-students">
 <h2>👩‍🎓 1) قائمة الطالبات</h2>
@@ -526,7 +528,7 @@ $("loginForm").addEventListener("submit",async e=>{
 });
 
 $("openNewExamView").addEventListener("click",()=>{showAdminView("new");clearWorkspaceForNewExam();});
-$("openSavedExamView").addEventListener("click",async()=>{$("examSelect").value="";workspaceLoadedExamId="";savedQalunTeacherIds=new Set();generatedExamGroups=[];showAdminView("saved");await loadAdmin();showAdminView("saved");});
+$("openSavedExamView").addEventListener("click",async()=>{$("examSelect").value="";workspaceLoadedExamId="";savedQalunTeacherIds=new Set();generatedExamGroups=[];showAdminView("saved");await loadAdmin();showAdminView($("examSelect").value?"saved-details":"saved");});
 $("openTeachersView").addEventListener("click",()=>showAdminView("teachers"));
 $("backToAdminMenu").addEventListener("click",()=>showAdminView("home"));
 $("backFromSavedPicker").addEventListener("click",()=>showAdminView("home"));
@@ -568,6 +570,7 @@ $("deleteExamBtn").addEventListener("click",async()=>{
   }
 });
 $("examDuration").addEventListener("change",()=>{if(parsedSchedule.length)renderParsedSchedule();});
+$("refreshDashboardStats").addEventListener("click",async()=>{const btn=$("refreshDashboardStats");if(btn.disabled)return;btn.disabled=true;btn.textContent="…";try{await loadDashboard();}finally{btn.disabled=false;btn.textContent="↻";}});
 $("examSelect").addEventListener("change",async()=>{
   const exam=exams.find(x=>x.id===$("examSelect").value);
   workspaceLoadedExamId="";savedQalunTeacherIds=new Set();generatedExamGroups=[];$("generatedLists").innerHTML="";$("listReview").innerHTML="";
