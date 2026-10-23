@@ -139,7 +139,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div id="adminWorkspace" class="hidden">
 <div id="adminHomeMenu" class="admin-home-menu">
   <button type="button" class="admin-home-option" id="openNewExamView"><span class="admin-home-icon">＋</span><strong>اختبار جديد</strong><small>إعداد اختبار وقائمة الطالبات والمواعيد</small></button>
-  <button type="button" class="admin-home-option" id="openSavedExamView"><span class="admin-home-icon">📋</span><strong>اختبار مسجل</strong><small>عرض الاختبارات المحفوظة وتحديث بياناتها</small></button>
+  <button type="button" class="admin-home-option" id="openSavedExamView"><span class="admin-home-icon">📋</span><strong>اختبار مسجل</strong><small>عرض الاختبارات المحفوظة وتعديل بياناتها</small></button>
   <button type="button" class="admin-home-option" id="openTeachersView"><span class="admin-home-icon">👩‍🏫</span><strong>إدارة المعلمات</strong><small>إضافة معلمة أو تعديل بياناتها وحذفها</small></button>
   <div class="actions"><button id="logoutBtn" class="gray" type="button">تسجيل الخروج</button></div>
 </div>
@@ -158,7 +158,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div><label for="registrationState">التسجيل</label><select id="registrationState"><option value="closed">مغلق</option><option value="paused">متوقف مؤقتًا</option><option value="open">مفتوح</option></select></div>
 </div>
 <input id="examInstructions" type="hidden" value="">
-<div class="actions"><button class="primary" type="submit">حفظ الاختبار</button><button class="gray" type="button" id="newExamBtn">اختبار جديد</button></div>
+<p class="hint">املئي البيانات هنا، ثم احفظي بيانات الاختبار وقائمة الطالبات والمواعيد معًا من زر الحفظ الموجود أسفل الصفحة.</p>
 </form>
 <div id="examFormStatus" class="status"></div>
 </div>
@@ -169,7 +169,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div class="section-action-head"><h2>📋 الاختبارات المسجلة</h2><button type="button" class="soft" id="backFromSavedPicker">↩️ القائمة الرئيسية</button></div>
 <label for="examSelect">اختاري الاختبار المحفوظ</label>
 <select id="examSelect"><option value="">لا توجد اختبارات محفوظة</option></select>
-<div class="actions"><button class="soft" id="refreshAdmin" type="button">🔄 تحديث قائمة الاختبارات</button></div>
+
 </div>
 
 <div class="card exam-workspace-section" id="guide-students">
@@ -233,10 +233,10 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div id="teacherCountStatus" class="status show info"></div>
 </div>
 <div class="card hidden" id="registrationsCard">
-<div class="section-action-head"><h2>📋 التسجيلات</h2><button type="button" class="soft" id="backFromRegistrations">↩️ رجوع لبيانات الاختبار</button></div>
+<div class="section-action-head"><h2>📋 التسجيلات</h2></div>
 <div id="registrationsTable" class="table-wrap"></div>
 </div>
-<div class="card hidden" id="issuesCard"><div class="section-action-head"><h2>📨 البلاغات والشكاوى</h2><button type="button" class="soft" id="backFromIssues">↩️ رجوع لبيانات الاختبار</button></div><div id="issuesList"></div></div>
+<div class="card hidden" id="issuesCard"><div class="section-action-head"><h2>📨 البلاغات والشكاوى</h2></div><div id="issuesList"></div></div>
 <div class="card hidden" id="finishExamPanel" style="margin-top:14px;border:1px solid #efcaca;background:#fffafa">
   <h3 style="margin:0 0 6px;color:#a12626">إنهاء الاختبار</h3>
   <p class="hint">بعد انتهاء الاختبار، يمكنك حذف بياناته نهائيًا. سيُحذف الاختبار وتسجيلات الطالبات وقائمتهن ومواعيده والبلاغات والإعدادات وسجل الأحداث المرتبط به. لن تُحذف بيانات المعلمات نفسها، ولن يمكن التراجع عن الحذف.</p>
@@ -524,15 +524,15 @@ $("loginForm").addEventListener("submit",async e=>{
   if(accessToken) status("adminStatus","تم تسجيل الدخول. لو ظهرت رسالة رفض صلاحيات، فالحساب يحتاج إضافته إلى قائمة الإدارة.","ok");
 });
 $("logoutBtn").addEventListener("click",async()=>{await supabase.auth.signOut();accessToken=null;dashboard=null;await refreshSession();});
-$("refreshAdmin").addEventListener("click",()=>{workspaceLoadedExamId="";loadAdmin();});
+
 $("openNewExamView").addEventListener("click",()=>{showAdminView("new");clearWorkspaceForNewExam();});
 $("openSavedExamView").addEventListener("click",async()=>{$("examSelect").value="";showAdminView("saved");await loadAdmin();showAdminView("saved");});
 $("openTeachersView").addEventListener("click",()=>showAdminView("teachers"));
 $("backToAdminMenu").addEventListener("click",()=>showAdminView("home"));
 $("backFromSavedPicker").addEventListener("click",()=>showAdminView("home"));
 $("backFromTeachers").addEventListener("click",()=>showAdminView("home"));
-$("backFromRegistrations").addEventListener("click",()=>showAdminView("saved-details"));
-$("backFromIssues").addEventListener("click",()=>showAdminView("saved-details"));
+
+
 $("deleteExamBtn").addEventListener("click",async()=>{
   const examId=$("examSelect").value;
   const exam=exams.find(x=>x.id===examId);
@@ -578,7 +578,7 @@ $("examSelect").addEventListener("change",async()=>{
   if(adminViewMode==="saved"||adminViewMode==="saved-details")showAdminView(exam?"saved-details":"saved");
 });
 $("toggleExamForm").addEventListener("click",()=>{const panel=$("examFormPanel"),show=panel.classList.contains("hidden");panel.classList.toggle("hidden",!show);$("toggleExamForm").setAttribute("aria-expanded",String(show));});
-$("newExamBtn").addEventListener("click",()=>{$("examFormPanel").classList.remove("hidden");$("toggleExamForm").setAttribute("aria-expanded","true"); $("examForm").reset(); $("editExamId").value=""; $("examDuration").value="5"; $("registrationState").value="closed"; savedQalunTeacherIds=new Set();generatedExamGroups=[];$("generatedLists").innerHTML="";$("listReview").innerHTML=""; clearStatus("examFormStatus"); });
+
 function fillExamForm(x) {
   $("editExamId").value=x.id; $("examTitle").value=x.title||""; $("examDate").value=x.exam_date||"";
   $("examDuration").value=String(x.default_duration_minutes||5);
@@ -643,7 +643,8 @@ async function loadDashboard() {
       if(savedStudents.length||parsedSchedule.length)status("listGenerationStatus","تم استرجاع بيانات الاختبار المحفوظة. يمكنك إنشاء القوائم أو حفظ التعديلات.","ok");
     }
     const c=dashboard.counts||{};
-    $("dashboardStats").innerHTML=[["الطالبات",c.students||0],["التسجيلات",c.registrations||0],["المسجلات",c.registered||0],["البلاغات",c.issues||0]].map(x=>'<div class="stat"><b>'+safe(x[1])+'</b><span>'+safe(x[0])+'</span></div>').join("");
+    const rosterCount=parsedExamStudents.length;
+    $("dashboardStats").innerHTML=[["الطالبات",rosterCount],["التسجيلات",c.registrations||0],["المسجلات",c.registered||0],["البلاغات",c.issues||0]].map(x=>'<div class="stat"><b>'+safe(x[1])+'</b><span>'+safe(x[0])+'</span></div>').join("");
     const regs=dashboard.registrations||[];
     $("registrationsTable").innerHTML='<h3>ملخص التسجيلات</h3>'+(regs.length?'<div class="table-wrap"><table><thead><tr><th>الطالبة</th><th>الرواية</th><th>الحالة</th><th>المعلمة</th><th>إجراء</th></tr></thead><tbody>'+regs.map(r=>'<tr><td>'+safe(r.student?.student_name||r.id.slice(0,8))+'<div class="hint">'+safe(r.student?.student_number||"")+'</div></td><td>'+safe(r.student?.riwaya==="qalun"?"قالون":"حفص")+'</td><td><select data-reg-status="'+safe(r.id)+'">'+["registered","confirmed","needs_review","cancelled","completed"].map(s=>'<option '+(r.status===s?'selected':'')+' value="'+s+'">'+({"registered":"مسجلة","confirmed":"مؤكدة","needs_review":"تحتاج مراجعة","cancelled":"ملغاة","completed":"مكتملة"}[s])+'</option>').join("")+'</select></td><td>'+safe((dashboard.teacherSettings||[]).find(t=>t.teacher_id===r.assigned_teacher_id)?.teachers?.full_name||"غير محددة")+'</td><td><button class="soft" data-save-reg="'+safe(r.id)+'">حفظ الحالة</button></td></tr>').join("")+'</tbody></table></div>':'<p class="hint">لا توجد تسجيلات بعد.</p>');
     $("registrationsTable").querySelectorAll("[data-save-reg]").forEach(btn=>btn.addEventListener("click",async()=>{
@@ -657,12 +658,9 @@ async function loadDashboard() {
     }));
   } catch(e) { status("adminStatus",readable(e),"bad"); }
 }
-$("examForm").addEventListener("submit",async e=>{
+$("examForm").addEventListener("submit",e=>{
   e.preventDefault();
-  try {
-    const r=await api("admin_save_exam",{exam_id:$("editExamId").value||undefined,title:$("examTitle").value,exam_date:$("examDate").value||null,default_duration_minutes:Number($("examDuration").value),status:($("editExamId").value?(exams.find(x=>x.id===$("editExamId").value)?.status||"draft"):"draft"),registration_state:$("registrationState").value,instructions:$("examInstructions").value});
-    status("examFormStatus","تم حفظ الاختبار.","ok"); await loadAdmin(); $("examSelect").value=r.exam.id;fillExamForm(r.exam);await loadDashboard();await renderTeachers();await loadPublicExam();showAdminView("saved-details");
-  } catch(err){status("examFormStatus",readable(err),"bad");}
+  status("examFormStatus","استخدمي زر «حفظ بيانات الاختبار» أسفل الصفحة لحفظ جميع البيانات مرة واحدة.","info");
 });
 $("teacherForm").addEventListener("submit",async e=>{
   e.preventDefault();
@@ -1178,7 +1176,7 @@ $("saveScheduleBtn").addEventListener("click",async()=>{
 
 async function saveAllExamWorkspace(publish=false){
  const btn=publish?$("publishExamBtn"):$("saveAllWorkspaceBtn"),originalText=btn.textContent;btn.disabled=true;btn.textContent=publish?"جارٍ حفظ البيانات ونشر الاختبار...":"جارٍ حفظ بيانات الاختبار...";
- const locked=[...document.querySelectorAll('#examSelect,#newExamBtn,#examTitle,#examDate,#examDuration,#registrationState,#examInstructions,#studentsInput,#scheduleInput,input[name="listDuration"],.examQalunCheck')],previous=locked.map(el=>el.disabled);locked.forEach(el=>el.disabled=true);
+ const locked=[...document.querySelectorAll('#examSelect,#examTitle,#examDate,#examDuration,#registrationState,#examInstructions,#studentsInput,#scheduleInput,input[name="listDuration"],.examQalunCheck')],previous=locked.map(el=>el.disabled);locked.forEach(el=>el.disabled=true);
  try{
   const existingQalunControls=document.querySelectorAll(".examQalunCheck").length>0;
   const selectedQalunBeforeSave=new Set(existingQalunControls?selectedExamQalun():savedQalunTeacherIds);
@@ -1209,8 +1207,12 @@ $("saveAllWorkspaceBtn").addEventListener("click",()=>saveAllExamWorkspace(false
 $("publishExamBtn").addEventListener("click",()=>saveAllExamWorkspace(true));
 
 async function loadAdminPublicRefresh(){await loadPublicExam();}
+try{await supabase.auth.signOut({scope:"local"});}catch(e){}
+accessToken=null;
+$("loginCard").classList.remove("hidden");
+$("adminWorkspace").classList.add("hidden");
+$("teacherQuickActions").classList.add("hidden");
 await loadPublicExam();
-await refreshSession();
 </script>
 </body>
 </html>
