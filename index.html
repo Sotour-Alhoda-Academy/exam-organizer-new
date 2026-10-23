@@ -767,6 +767,12 @@ function schedulePeriod(text){
     .replace(/[–—−]/g,"-")
     .trim();
   raw=scheduleDigits(raw);
+  /* Normalize Arabic meridiem markers to AM/PM before parsing. JavaScript's
+     \\b word boundary does not work reliably after Arabic letters (ص/م/ظ),
+     which caused 3:00 ظ and 7:00 م to be read as morning. */
+  raw=raw
+    .replace(/(\\d)(\\s*)(صباح(?:ا|ً)?|ص)(?=\\s|$)/gi,"$1 AM")
+    .replace(/(\\d)(\\s*)(مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|م|ظ|ع|ز)(?=\\s|$)/gi,"$1 PM");
   /* مدى مباشر بالنقطة أو النقطتين: 8.10 / ٨.١٠ / 8..10 / ٨..١٠ */
   const dotRange=/(?:^|\s)(\d{1,2})\s*\.\s*\.?\s*(\d{1,2})\s*(صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)?(?=\s*$)/i;
   let dr=raw.match(dotRange);
