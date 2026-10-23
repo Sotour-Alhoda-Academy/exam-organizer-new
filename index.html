@@ -97,6 +97,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <h2>تسجيل الطالبة</h2>
 <p class="hint">أدخلي رقم الطالبة كما هو مسجّل لدى الإدارة، ثم راجعي الاسم والرواية قبل اختيار المعلمة.</p>
 <div id="publicExamStatus" class="status show info">جارٍ التحقق من الاختبار المتاح...</div>
+<div id="publicExamRetry" class="actions hidden"><button type="button" id="retryPublicExam" class="soft">🔄 إعادة تحميل الاختبارات</button></div>
 <div id="publicExamPickerWrap" class="hidden"><label for="publicExamPicker">اختاري الاختبار</label><select id="publicExamPicker"></select></div>
 <div id="publicExamInfo" class="hidden"></div>
 <form id="lookupForm">
@@ -162,12 +163,13 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div id="examFormStatus" class="status"></div>
 </div>
 <div id="adminStatus" class="status"></div>
-<div id="examPickerArea" class="hidden">
-<label for="examSelect">اختاري الاختبار المحفوظ</label>
-<select id="examSelect"><option value="">لا توجد اختبارات</option></select>
-<div class="actions"><button class="soft" id="refreshAdmin" type="button">🔄 تحديث البيانات</button><button class="soft" id="openRegistrationsView" type="button">📋 التسجيلات</button><button class="soft" id="openIssuesView" type="button">📨 البلاغات</button></div>
-</div>
 <div id="dashboardStats" class="stats"></div>
+</div>
+<div id="examPickerArea" class="card hidden">
+<div class="section-action-head"><h2>📋 الاختبارات المسجلة</h2><button type="button" class="soft" id="backFromSavedPicker">↩️ القائمة الرئيسية</button></div>
+<label for="examSelect">اختاري الاختبار المحفوظ</label>
+<select id="examSelect"><option value="">لا توجد اختبارات محفوظة</option></select>
+<div class="actions"><button class="soft" id="refreshAdmin" type="button">🔄 تحديث قائمة الاختبارات</button></div>
 </div>
 
 <div class="card exam-workspace-section" id="guide-students">
@@ -223,7 +225,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 </div>
 
 <div class="card hidden" id="teacherManagementCard">
-<h2>👩‍🏫 إدارة المعلمات</h2>
+<div class="section-action-head"><h2>👩‍🏫 إدارة المعلمات</h2><button type="button" class="soft" id="backFromTeachers">↩️ القائمة الرئيسية</button></div>
 <div id="teacherQuickActions" class="teacher-quick-actions" aria-label="إدارة المعلمات">
   <button type="button" id="quickManageTeachers" class="teacher-quick-btn teacher-quick-manage" title="إدارة المعلمات: تعديل البيانات أو حذف معلمة" aria-label="إدارة المعلمات: تعديل البيانات أو حذف معلمة">✏️ إدارة المعلمات</button>
   <button type="button" id="quickAddTeacher" class="teacher-quick-btn teacher-quick-add" title="إضافة معلمة جديدة" aria-label="إضافة معلمة جديدة">＋ إضافة معلمة</button>
@@ -300,7 +302,18 @@ document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>show
 async function api(action, payload={}, auth=true) {
   const headers = {"Content-Type":"application/json","apikey":SUPABASE_KEY};
   if (auth && accessToken) headers.Authorization = "Bearer " + accessToken;
-  const response = await fetch(API_URL,{method:"POST",headers,body:JSON.stringify({action,...payload})});
+  const controller = new AbortController();
+  const publicRequest = action === "public_exams" || action === "public_exam";
+  const timeoutId = publicRequest ? setTimeout(() => controller.abort(), 15000) : null;
+  let response;
+  try {
+    response = await fetch(API_URL,{method:"POST",headers,body:JSON.stringify({action,...payload}),signal:controller.signal});
+  } catch (error) {
+    if (publicRequest && error?.name === "AbortError") throw new Error("PUBLIC_EXAM_TIMEOUT");
+    throw error;
+  } finally {
+    if (timeoutId !== null) clearTimeout(timeoutId);
+  }
   let result={}; try { result=await response.json(); } catch {}
   if (!response.ok) throw new Error(result.error || "REQUEST_FAILED");
   return result;
@@ -331,7 +344,8 @@ const messages = {
   INVALID_FIELDS:"راجعي الحقول المطلوبة.",
   TITLE_REQUIRED:"اكتبي اسم الاختبار.",
   TEACHER_NAME_REQUIRED:"اكتبي اسم المعلمة.",
-  CAPACITY_OVERRIDE_REASON_REQUIRED:"اكتبي سبب تغيير السعة الاستثنائية."
+  CAPACITY_OVERRIDE_REASON_REQUIRED:"اكتبي سبب تغيير السعة الاستثنائية.",
+  PUBLIC_EXAM_TIMEOUT:"استغرق الاتصال بالخادم أكثر من 15 ثانية. تحققي من الإنترنت ثم أعيدي تحميل الاختبارات."
 };
 function readable(error) {
   const key = typeof error === "string" ? error : error?.message;
@@ -350,6 +364,8 @@ function capacityLabel(t) {
 }
 async function loadPublicExam(requestedExamId=selectedPublicExamId) {
   const loadSeq = ++publicExamLoadSeq;
+  $("publicExamRetry").classList.add("hidden");
+  status("publicExamStatus","جارٍ التحقق من الاختبار المتاح...","info");
   try {
     const listData = await api("public_exams",{},false);
     if (loadSeq !== publicExamLoadSeq) return;
@@ -394,8 +410,13 @@ async function loadPublicExam(requestedExamId=selectedPublicExamId) {
       }
       $("lookupForm").classList.add("hidden");
     }
-  } catch(e) { status("publicExamStatus",readable(e),"bad"); }
+  } catch(e) {
+    if (loadSeq !== publicExamLoadSeq) return;
+    status("publicExamStatus",readable(e),"bad");
+    $("publicExamRetry").classList.remove("hidden");
+  }
 }
+$("retryPublicExam").addEventListener("click",()=>loadPublicExam(""));
 $("publicExamPicker").addEventListener("change",async()=>{
   selectedPublicExamId=$("publicExamPicker").value;
   $("studentNumber").value="";
@@ -456,19 +477,21 @@ $("issueForm").addEventListener("submit",async e=>{
 let adminViewMode="home";
 function showAdminView(mode){
   adminViewMode=mode;
-  const home=mode==="home",exam=mode==="new"||mode==="saved",saved=mode==="saved",teachersView=mode==="teachers";
+  const home=mode==="home",newExam=mode==="new",savedPicker=mode==="saved",savedDetails=mode==="saved-details",exam=newExam||savedDetails,teachersView=mode==="teachers";
+  const savedView=savedPicker||savedDetails;
   $("adminHomeMenu").classList.toggle("hidden",!home);
   $("examAdminHeader").classList.toggle("hidden",!exam);
-  $("examPickerArea").classList.toggle("hidden",!saved);
+  $("examPickerArea").classList.toggle("hidden",!savedView);
   ["guide-students","scheduleCard","guide-qalun","guide-generate"].forEach(id=>$(id).classList.toggle("hidden",!exam));
   $("teacherManagementCard").classList.toggle("hidden",!teachersView);
-  $("registrationsCard").classList.toggle("hidden",!saved);
-  $("issuesCard").classList.toggle("hidden",!saved);
-  $("finishExamPanel").classList.toggle("hidden",!saved);
-  $("examFormPanel").classList.remove("hidden");
-  $("toggleExamForm").setAttribute("aria-expanded","true");
-  $("saveAllWorkspaceBtn").textContent=saved?"🔄 تحديث البيانات":"💾 حفظ بيانات الاختبار";
-  $("saveAllWorkspaceBtn").title=saved?"حفظ التعديلات الحالية على بيانات الاختبار":"حفظ بيانات الاختبار الجديد";
+  $("registrationsCard").classList.toggle("hidden",!savedDetails);
+  $("issuesCard").classList.toggle("hidden",!savedDetails);
+  $("finishExamPanel").classList.toggle("hidden",!savedDetails);
+  $("examFormPanel").classList.toggle("hidden",!newExam&&!savedDetails);
+  $("toggleExamForm").classList.toggle("hidden",!newExam&&!savedDetails);
+  $("toggleExamForm").setAttribute("aria-expanded",String(newExam||savedDetails));
+  $("saveAllWorkspaceBtn").textContent=savedDetails?"🔄 تحديث البيانات":"💾 حفظ بيانات الاختبار";
+  $("saveAllWorkspaceBtn").title=savedDetails?"حفظ التعديلات الحالية على بيانات الاختبار":"حفظ بيانات الاختبار الجديد";
   if(home){$("adminStatus").textContent="";}
 }
 function clearWorkspaceForNewExam(){
@@ -489,7 +512,7 @@ async function refreshSession() {
   $("adminWorkspace").classList.toggle("hidden",!accessToken);
   $("teacherQuickActions").classList.toggle("hidden",!accessToken);
   if(!accessToken){$("teacherEditorModal").classList.add("hidden");showAdminView("home");}
-  if(accessToken){await loadAdmin();showAdminView("home");}
+  if(accessToken){showAdminView("home");await loadAdmin();}
 }
 $("loginForm").addEventListener("submit",async e=>{
   e.preventDefault(); status("loginStatus","جارٍ تسجيل الدخول...","info");
@@ -502,14 +525,14 @@ $("loginForm").addEventListener("submit",async e=>{
 });
 $("logoutBtn").addEventListener("click",async()=>{await supabase.auth.signOut();accessToken=null;dashboard=null;await refreshSession();});
 $("refreshAdmin").addEventListener("click",()=>{workspaceLoadedExamId="";loadAdmin();});
-$("openNewExamView").addEventListener("click",()=>{clearWorkspaceForNewExam();showAdminView("new");});
-$("openSavedExamView").addEventListener("click",async()=>{showAdminView("saved");await loadAdmin();});
+$("openNewExamView").addEventListener("click",()=>{showAdminView("new");clearWorkspaceForNewExam();});
+$("openSavedExamView").addEventListener("click",async()=>{$("examSelect").value="";showAdminView("saved");await loadAdmin();showAdminView("saved");});
 $("openTeachersView").addEventListener("click",()=>showAdminView("teachers"));
 $("backToAdminMenu").addEventListener("click",()=>showAdminView("home"));
-$("backFromRegistrations").addEventListener("click",()=>showAdminView("saved"));
-$("backFromIssues").addEventListener("click",()=>showAdminView("saved"));
-$("openRegistrationsView").addEventListener("click",()=>{$("registrationsCard").scrollIntoView({behavior:"smooth",block:"start"});});
-$("openIssuesView").addEventListener("click",()=>{$("issuesCard").scrollIntoView({behavior:"smooth",block:"start"});});
+$("backFromSavedPicker").addEventListener("click",()=>showAdminView("home"));
+$("backFromTeachers").addEventListener("click",()=>showAdminView("home"));
+$("backFromRegistrations").addEventListener("click",()=>showAdminView("saved-details"));
+$("backFromIssues").addEventListener("click",()=>showAdminView("saved-details"));
 $("deleteExamBtn").addEventListener("click",async()=>{
   const examId=$("examSelect").value;
   const exam=exams.find(x=>x.id===examId);
@@ -549,9 +572,10 @@ $("examSelect").addEventListener("change",async()=>{
   const exam=exams.find(x=>x.id===$("examSelect").value);
   workspaceLoadedExamId="";savedQalunTeacherIds=new Set();generatedExamGroups=[];$("generatedLists").innerHTML="";$("listReview").innerHTML="";
   if(exam) fillExamForm(exam);
+  if(adminViewMode==="saved"||adminViewMode==="saved-details")showAdminView(exam?"saved-details":"saved");
   await loadDashboard();
   await renderTeachers();
-  if(adminViewMode==="saved")showAdminView("saved");
+  if(adminViewMode==="saved"||adminViewMode==="saved-details")showAdminView(exam?"saved-details":"saved");
 });
 $("toggleExamForm").addEventListener("click",()=>{const panel=$("examFormPanel"),show=panel.classList.contains("hidden");panel.classList.toggle("hidden",!show);$("toggleExamForm").setAttribute("aria-expanded",String(show));});
 $("newExamBtn").addEventListener("click",()=>{$("examFormPanel").classList.remove("hidden");$("toggleExamForm").setAttribute("aria-expanded","true"); $("examForm").reset(); $("editExamId").value=""; $("examDuration").value="5"; $("registrationState").value="closed"; savedQalunTeacherIds=new Set();generatedExamGroups=[];$("generatedLists").innerHTML="";$("listReview").innerHTML=""; clearStatus("examFormStatus"); });
@@ -569,7 +593,8 @@ async function loadAdmin() {
     const prior=$("examSelect").value;
     $("examSelect").innerHTML=exams.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+' · '+safe(x.status)+'</option>').join("")||'<option value="">لا توجد اختبارات</option>';
     if(exams.some(x=>x.id===prior)) $("examSelect").value=prior;
-    else if(exams.length) $("examSelect").value=exams[0].id;
+    else if(exams.length && adminViewMode!=="saved") $("examSelect").value=exams[0].id;
+    else $("examSelect").value="";
     const selected=exams.find(x=>x.id===$("examSelect").value);
     $("deleteExamBtn").disabled=!selected;
     if(selected)fillExamForm(selected);
