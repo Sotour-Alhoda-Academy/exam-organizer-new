@@ -485,6 +485,7 @@ function showAdminView(mode){
   $("adminHomeMenu").classList.toggle("hidden",!home);
   $("examAdminHeader").classList.toggle("hidden",!exam);
   $("examPickerArea").classList.toggle("hidden",!savedView);
+  $("backToAdminMenu").classList.toggle("hidden",savedDetails);
   ["guide-students","scheduleCard","guide-qalun","guide-generate"].forEach(id=>$(id).classList.toggle("hidden",!exam));
   $("teacherManagementCard").classList.toggle("hidden",!teachersView);
   $("registrationsCard").classList.toggle("hidden",!savedDetails);
