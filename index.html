@@ -526,7 +526,7 @@ $("loginForm").addEventListener("submit",async e=>{
 });
 
 $("openNewExamView").addEventListener("click",()=>{showAdminView("new");clearWorkspaceForNewExam();});
-$("openSavedExamView").addEventListener("click",async()=>{$("examSelect").value="";showAdminView("saved");await loadAdmin();showAdminView("saved");});
+$("openSavedExamView").addEventListener("click",async()=>{$("examSelect").value="";workspaceLoadedExamId="";savedQalunTeacherIds=new Set();generatedExamGroups=[];showAdminView("saved");await loadAdmin();showAdminView("saved");});
 $("openTeachersView").addEventListener("click",()=>showAdminView("teachers"));
 $("backToAdminMenu").addEventListener("click",()=>showAdminView("home"));
 $("backFromSavedPicker").addEventListener("click",()=>showAdminView("home"));
@@ -612,7 +612,6 @@ async function loadDashboard() {
     if(loadSeq!==adminDashboardLoadSeq || examId!==$("examSelect").value) return;
     dashboard=dashboardData;
     if(workspaceLoadedExamId!==examId){
-      workspaceLoadedExamId=examId;
       const workspaceResult=await api("admin_get_workspace",{exam_id:examId});
       if(loadSeq!==adminDashboardLoadSeq || examId!==$("examSelect").value) return;
       const workspace=workspaceResult.workspace;
@@ -640,6 +639,7 @@ async function loadDashboard() {
         generatedExamGroups=[];$("generatedLists").innerHTML="";$("listReview").innerHTML="";
       }
       renderQalunChoices();
+      workspaceLoadedExamId=examId;
       if(savedStudents.length||parsedSchedule.length)status("listGenerationStatus","تم استرجاع بيانات الاختبار المحفوظة. يمكنك إنشاء القوائم أو حفظ التعديلات.","ok");
     }
     const c=dashboard.counts||{};
@@ -1226,20 +1226,21 @@ async function saveAllExamWorkspace(publish=false){
   saveStage="حفظ بيانات الاختبار";
   const saved=await api("admin_save_exam",{exam_id:examId||undefined,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:oldStatus,registration_state:$("registrationState").value,instructions:$("examInstructions").value});
   const id=saved.exam.id;$("examSelect").value=id;$("editExamId").value=id;exams=[saved.exam,...exams.filter(x=>x.id!==id)];
-  saveStage="حفظ قائمة الطالبات";
-  const students=parsedExamStudents.map(x=>({student_number:String(x.student_number),student_name:x.name,riwaya:/قالون/.test(x.riwayah)?"qalun":"hafs"})),imported=await api("admin_import_students",{exam_id:id,students});
+  const students=parsedExamStudents.map(x=>({student_number:String(x.student_number),student_name:x.name,riwaya:/قالون/.test(x.riwayah)?"qalun":"hafs"}));
   const qids=new Set(selectedExamQalun()),grouped=new Map();parsedSchedule.forEach(slot=>{const cur=grouped.get(slot.teacherId);if(!cur)grouped.set(slot.teacherId,{...slot});else{cur.start=Math.min(cur.start,slot.start);cur.end=Math.max(cur.end,slot.end);cur.sourceLine+=" / "+slot.sourceLine;}});
-  saveStage="حفظ إعدادات ومواعيد المعلمات";
   const teacherSettingsPayload=teachers.filter(t=>t.is_active!==false).map(teacher=>{const slot=grouped.get(teacher.id);return slot?{teacher_id:teacher.id,is_available:true,accepts_qalun:qids.has(teacher.id),start_time:scheduleClock(slot.start),end_time:scheduleClock(slot.end),capacity:Math.max(0,Math.floor((slot.end-slot.start)/duration)),capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:("مستخرج تلقائيًا من رسالة المواعيد: "+slot.sourceLine).slice(0,1000)}:{teacher_id:teacher.id,is_available:false,accepts_qalun:false,start_time:null,end_time:null,capacity:0,capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:"لم تظهر هذه المعلمة في رسالة مواعيد الاختبار."};});
-  await api("admin_save_teacher_settings_bulk",{exam_id:id,settings:teacherSettingsPayload});
-  saveStage="حفظ بيانات مساحة العمل والقوائم المولدة";
   const groupsToSave=generatedExamGroups.map(g=>({teacherId:g.teacherId,teacherName:g.teacherName,start:g.start,end:g.end,capacity:g.capacity,students:(g.students||[]).map(st=>({name:st.name,student_number:st.student_number,riwayah:st.riwayah,start:st.start,end:st.end}))}));
-  await api("admin_save_workspace",{exam_id:id,students_input:$("studentsInput").value,schedule_input:$("scheduleInput").value,list_duration_minutes:duration,generated_lists:groupsToSave});
+  saveStage="حفظ قائمة الطالبات والمواعيد وبيانات مساحة العمل";
+  const [imported]=await Promise.all([
+    api("admin_import_students",{exam_id:id,students}),
+    api("admin_save_teacher_settings_bulk",{exam_id:id,settings:teacherSettingsPayload}),
+    api("admin_save_workspace",{exam_id:id,students_input:$("studentsInput").value,schedule_input:$("scheduleInput").value,list_duration_minutes:duration,generated_lists:groupsToSave})
+  ]);
   saveStage=publish?"تأكيد نشر الاختبار":"تأكيد حفظ بيانات الاختبار";
   const finalExam=publish?(await api("admin_save_exam",{exam_id:id,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:"published",registration_state:$("registrationState").value,instructions:$("examInstructions").value})).exam:saved.exam;
   exams=[finalExam,...exams.filter(x=>x.id!==id)];$("examSelect").innerHTML=exams.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+' · '+safe(x.status)+'</option>').join("")||'<option value="">لا توجد اختبارات</option>';$("examSelect").value=id;savedQalunTeacherIds=qids;fillExamForm(finalExam);workspaceLoadedExamId="";
   saveStage="تحديث لوحة الإدارة والاختبار المتاح للطالبات";
-  await loadDashboard();await renderTeachers();selectedPublicExamId=id;await loadPublicExam(id);
+  selectedPublicExamId=id;await Promise.all([loadDashboard(),renderTeachers(),loadPublicExam(id)]);
   status("saveAllWorkspaceStatus",publish?"تم حفظ البيانات ونشر الاختبار. قائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون محفوظة. حالة التسجيل: "+({"open":"مفتوح","closed":"مغلق","paused":"متوقف مؤقتًا"}[finalExam.registration_state]||finalExam.registration_state)+".":"تم حفظ بيانات الاختبار وقائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون دون نشر اختبار جديد. يمكنك إنشاء القوائم الآن أو نشر الاختبار لاحقًا.","ok");
   status("adminStatus",publish?"تم حفظ إعدادات الاختبار ونشره.":"تم حفظ إعدادات الاختبار دون نشره.","ok");
    if(!publish&&adminViewMode==="new")showAdminView("saved");
