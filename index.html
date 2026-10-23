@@ -195,7 +195,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 فاطمة محمد 12 إلى 1
 مرفت 2 م - 3 م"></textarea>
 <div class="actions">
-<button type="button" id="parseScheduleBtn" class="primary">🔍 تحليل المواعيد وحفظها تلقائيًا</button>
+<button type="button" id="parseScheduleBtn" class="primary">🔍 تحليل المواعيد فقط</button>
 <button type="button" id="clearScheduleBtn" class="gray">🗑️ مسح</button><button type="button" id="undoScheduleBtn" class="gray">↩️ تراجع</button>
 <button type="button" id="saveScheduleBtn" class="green" disabled style="display:none">💾 حفظ مواعيد الاختبار</button>
 </div>
@@ -1177,7 +1177,7 @@ renderScheduleIssues();
   $("saveScheduleBtn").disabled=!parsedSchedule.length||!$("examSelect").value;
   if(!parsedSchedule.length)status("scheduleStatus","لم أتعرف على أي موعد صالح. تأكدي أن أسماء المعلمات موجودة في قائمة المعلمات المحفوظة.","bad");
   else if(scheduleIssues.length)status("scheduleStatus","تم تحليل "+parsedSchedule.length+" موعد، لكن هناك "+scheduleIssues.length+" سطر يحتاج مراجعة قبل الحفظ.","warn");
-  else status("scheduleStatus","تم تحليل المواعيد بنجاح. راجعي الجدول ثم احفظي مواعيد الاختبار.","ok");
+  else status("scheduleStatus","تم تحليل المواعيد بنجاح. راجعي الجدول، وسيتم حفظ المواعيد عند الضغط على «حفظ بيانات الاختبار».","ok");
 }
 $("parseScheduleBtn").addEventListener("click",()=>{parseSchedule();});
 $("clearScheduleBtn").addEventListener("click",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};$("scheduleInput").value="";parsedSchedule=[];scheduleIssues=[];$("scheduleStats").innerHTML="";$("schedulePreview").innerHTML="";$("scheduleIssues").innerHTML="";renderQalunChoices();$("saveScheduleBtn").disabled=true;$("scheduleStatus").className="status";$("scheduleStatus").textContent="";});
