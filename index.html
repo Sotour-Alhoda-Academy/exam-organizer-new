@@ -720,7 +720,7 @@ async function generateExamLists(){
   groups.forEach(g=>{let t=g.start;g.students.forEach(st=>{st.start=t;st.end=t+dur;t+=dur;});});
   generatedExamGroups=groups.filter(g=>g.students.length);renderGeneratedGroups(generatedExamGroups,parsedExamStudents.length,qStudents.length);
   $("listGenerationStatus").className="status ok";
-  $("listGenerationStatus").textContent=registered.length?"تم إنشاء "+generatedExamGroups.length+" قائمة. تم تثبيت "+registered.length+" طالبة مسجلة مع المعلمات اللاتي اخترنها، وتوزيع الباقي عشوائيًا مع موازنة الأعداد.":"لم توجد تسجيلات من القائمة الحالية؛ تم إنشاء "+generatedExamGroups.length+" قائمة بالطريقة القديمة حسب ترتيب الطالبات.";
+  $("listGenerationStatus").textContent=registered.length?"تم إنشاء "+generatedExamGroups.length+" قائمة. تم تثبيت "+registered.length+" طالبة مسجلة مع المعلمات اللاتي اخترنها، ثم توزيع غير المسجلات بترتيب القائمة الأصلية حسب السعة المتبقية لكل معلمة.":"لم توجد تسجيلات من القائمة الحالية؛ تم توزيع الطالبات بترتيب القائمة الأصلية، مع تخصيص طالبات قالون للمعلمات المحددات لقالون.";
   if(examId){const groupsToSave=generatedExamGroups.map(g=>({teacherId:g.teacherId,teacherName:g.teacherName,start:g.start,end:g.end,capacity:g.capacity,students:(g.students||[]).map(st=>({name:st.name,student_number:st.student_number,riwayah:st.riwayah,start:st.start,end:st.end}))}));try{await api("admin_save_workspace",{exam_id:examId,students_input:$("studentsInput").value,schedule_input:$("scheduleInput").value,list_duration_minutes:dur,generated_lists:groupsToSave});}catch(err){status("listGenerationStatus","تم إنشاء القوائم، لكن تعذر حفظها تلقائيًا: "+readable(err),"warn");}}
  }catch(e){$("listGenerationStatus").className="status bad";$("listGenerationStatus").textContent=e.message;}
 }
