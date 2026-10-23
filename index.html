@@ -57,7 +57,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 .save-all-inline{display:flex;flex-direction:column;gap:8px;margin:12px 0}
 .save-all-inline button{align-self:flex-start;min-height:44px;padding:10px 18px;border-radius:8px}
 @media(max-width:560px){.save-all-inline button{width:100%}.exam-details-toggle{padding:8px 12px}}
-.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:12px 0}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
 .check{display:flex;align-items:center;gap:8px;border:1px solid var(--border,#e5dbea);border-radius:10px;padding:10px;background:#fff}
 .check input{width:auto;margin:0}
 .generated-list{border:1px solid #e5dbea;border-radius:12px;padding:14px;margin:12px 0;background:#fff}
@@ -157,7 +157,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 
 <div class="card" id="guide-students">
 <h2>👩‍🎓 1) قائمة الطالبات</h2>
-<p class="hint">الصقي قائمة الطالبات التي تحتوي على رقم كل طالبة واسمها. الصيغة: رقم الطالبة | الاسم | الرواية. القائمة نفسها ستُستخدم في واجهة الطالبات بعد تحليلها.</p>
+<p class="hint">الصقي قائمة الطالبات المرقمة، ثم راجعي الأسماء والروايات قبل إنشاء القوائم.</p>
 <textarea id="studentsInput" rows="7" placeholder="1001 | أميرة محمد | حفص&#10;1002 | نادين غزي | حفص&#10;1003 | روان السيد | قالون"></textarea>
 <div class="actions">
 <button type="button" id="parseStudentsBtn" class="primary">🔍 فصل الطالبات</button>
@@ -179,9 +179,9 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 فاطمة محمد 12 إلى 1
 مرفت 2 م - 3 م"></textarea>
 <div class="actions">
-<button type="button" id="parseScheduleBtn" class="primary">🔍 تحليل المواعيد</button>
+<button type="button" id="parseScheduleBtn" class="primary">🔍 تحليل المواعيد وحفظها تلقائيًا</button>
 <button type="button" id="clearScheduleBtn" class="gray">🗑️ مسح</button><button type="button" id="undoScheduleBtn" class="gray">↩️ تراجع</button>
-<button type="button" id="saveScheduleBtn" class="green" disabled>💾 حفظ مواعيد الاختبار</button>
+<button type="button" id="saveScheduleBtn" class="green" disabled style="display:none">💾 حفظ مواعيد الاختبار</button>
 </div>
 <div id="scheduleStatus" class="status"></div>
 <div id="scheduleStats" class="stats"></div>
@@ -194,14 +194,14 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <h2>📖 3) معلمات طالبات قالون</h2>
 <p class="hint">اختاري المعلمات التي تريدين أن تستقبل طالبات قالون في هذا الاختبار. حللي المواعيد أولًا.</p>
 <div id="qalunTeachers" class="checks">حللي المواعيد أولًا.</div>
-<div class="actions"><button type="button" id="selectAllQalunBtn" class="green">☑ اختيار الكل</button><button type="button" id="clearQalunBtn" class="gray">إلغاء الكل</button><button type="button" id="saveQalunBtn" class="primary">💾 حفظ اختيار معلمات قالون</button><span id="qalunSaveStatus" class="status qalun-save-status" role="status" aria-live="polite"></span></div>
+<div class="actions"><button type="button" id="selectAllQalunBtn" class="green">☑ اختيار الكل</button><button type="button" id="clearQalunBtn" class="gray">إلغاء الكل</button><button type="button" id="saveQalunBtn" class="primary" style="display:none">💾 حفظ اختيار معلمات قالون</button><span id="qalunSaveStatus" class="status qalun-save-status" role="status" aria-live="polite"></span></div>
 </div>
 
 <div class="card" id="guide-generate">
 <h2>⚙️ 5) إنشاء القوائم</h2>
 <p class="hint">اختاري مدة اختبار كل طالبة في هذا الاختبار. الافتراضي 5 دقائق، ويمكن اختيار 10 دقائق عند الحاجة.</p>
 <div class="duration-picker"><b>⏱️ وقت كل طالبة:</b><label><input type="radio" name="listDuration" value="5" checked> 5 دقائق</label><label><input type="radio" name="listDuration" value="10"> 10 دقائق</label></div>
-<div class="save-all-inline"><button type="button" id="saveAllWorkspaceBtn" class="green">💾 حفظ كل البيانات ونشر الاختبار</button><div id="saveAllWorkspaceStatus" class="status"></div></div>
+<div class="save-all-inline"><button type="button" id="saveAllWorkspaceBtn" class="green">💾 حفظ بيانات الاختبار</button><button type="button" id="publishExamBtn" class="primary">📢 نشر الاختبار</button><div id="saveAllWorkspaceStatus" class="status"></div></div>
 <p class="hint">التوزيع متوازن قدر الإمكان، مع احترام سعة كل معلمة، وطالبات قالون لا تذهب إلا للمعلمات المختارات.</p>
 <div class="actions"><button type="button" id="generateListsBtn" class="green">⚙️ إنشاء القوائم</button></div>
 <div id="listGenerationStatus" class="status"></div><div id="listReview"></div><div id="generatedLists"></div>
@@ -612,7 +612,7 @@ function renderQalunChoices(){
  const seen=new Set(),list=[];
  parsedSchedule.forEach(x=>{if(!seen.has(x.teacherId)){seen.add(x.teacherId);list.push(x)}});
  box.innerHTML=list.map(x=>'<label class="check"><input type="checkbox" class="examQalunCheck" value="'+safe(x.teacherId)+'"><span>'+safe(x.teacherName)+'</span></label>').join("");
- box.querySelectorAll(".examQalunCheck").forEach(cb=>{cb.checked=savedQalunTeacherIds.has(cb.value);});
+ box.querySelectorAll(".examQalunCheck").forEach(cb=>{cb.checked=savedQalunTeacherIds.has(cb.value);cb.addEventListener("change",()=>{if($("examSelect").value)saveQalunChoices();});});
 }
 function selectedExamQalun(){return [...document.querySelectorAll(".examQalunCheck:checked")].map(x=>x.value);}
 async function saveQalunChoices(){
@@ -641,33 +641,59 @@ function renderGeneratedGroups(groups,totalStudents=groups.reduce((n,g)=>n+(g.st
   $("generatedLists").innerHTML=generatedExamGroups.map(g=>{const output="🌷( قائمة اختبار)🌷\n\nالمعلمة: "+g.teacherName+"\n\n🕐 "+scheduleFmt(g.students[0].start)+" - "+scheduleFmt(g.students[g.students.length-1].end)+"\n🔢 عدد الطالبات: "+g.students.length+"\n\n"+g.students.map((st,i)=>(i+1)+") "+st.name+(st.riwayah==="قالون"?" — قالون":"")+"\n"+scheduleFmt(st.start)+" - "+scheduleFmt(st.end)).join("\n\n")+"\n\n🌷 المواعيد بتوقيت مصر 🌷\nبرجاء الالتزام بالمواعيد";return '<div class="generated-list"><h3>'+safe(g.teacherName)+' — '+g.students.length+' طالبة</h3><div class="actions"><button class="soft" type="button" data-copy-list>📋 نسخ القائمة</button></div><pre>'+safe(output)+'</pre></div>'}).join("");
   $("generatedLists").querySelectorAll("[data-copy-list]").forEach(btn=>btn.addEventListener("click",async()=>{const txt=btn.closest(".generated-list").querySelector("pre").textContent;try{await navigator.clipboard.writeText(txt);btn.textContent="✓ تم النسخ"}catch(e){const area=document.createElement("textarea");area.value=txt;document.body.appendChild(area);area.select();document.execCommand("copy");area.remove();btn.textContent="✓ تم النسخ"}}));
 }
-function generateExamLists(){
+async function generateExamLists(){
  try{
   if(!parsedExamStudents.length)parseExamStudents();
   if(!parsedSchedule.length)parseSchedule();
   if(!parsedExamStudents.length)throw new Error("الصقي قائمة الطالبات واضغطي «فصل الطالبات» أولًا.");
   if(!parsedSchedule.length)throw new Error("الصقي مواعيد المعلمات واضغطي «تحليل المواعيد» أولًا.");
-  const dur=examDuration(), qStudents=parsedExamStudents.filter(x=>x.riwayah==="قالون"),normal=parsedExamStudents.filter(x=>x.riwayah!=="قالون"),qids=selectedExamQalun();
-  if(qStudents.length&&!qids.length)throw new Error("توجد طالبات قالون؛ اختاري معلمة واحدة على الأقل في قسم معلمات قالون.");
-  const map=new Map();
-  parsedSchedule.forEach(x=>{if(!map.has(x.teacherId))map.set(x.teacherId,{teacherId:x.teacherId,teacherName:x.teacherName,start:x.start,end:x.end,capacity:0,students:[]});else{const g=map.get(x.teacherId);g.start=Math.min(g.start,x.start);g.end=Math.max(g.end,x.end)}});
-  const groups=[...map.values()].map(g=>({...g,capacity:Math.max(0,Math.floor((g.end-g.start)/dur)),students:[]})).filter(g=>g.capacity>0);
+  const examId=$("examSelect").value;
+  let regs=[];
+  if(examId){const fresh=await api("admin_dashboard",{exam_id:examId});dashboard=fresh;regs=(fresh.registrations||[]).filter(r=>["registered","confirmed","needs_review"].includes(r.status));}
+  const groupMap=new Map();
+  parsedSchedule.forEach(x=>{if(!groupMap.has(x.teacherId))groupMap.set(x.teacherId,{teacherId:x.teacherId,teacherName:x.teacherName,start:x.start,end:x.end,capacity:0,students:[]});else{const g=groupMap.get(x.teacherId);g.start=Math.min(g.start,x.start);g.end=Math.max(g.end,x.end);}});
+  const dur=examDuration(),groups=[...groupMap.values()].map(g=>({...g,capacity:Math.max(0,Math.floor((g.end-g.start)/dur)),students:[]})).filter(g=>g.capacity>0);
   if(!groups.length)throw new Error("لا توجد سعة صالحة في المواعيد.");
-  const qgroups=groups.filter(g=>qids.includes(g.teacherId));
-  if(qStudents.length){
+  const qids=new Set(selectedExamQalun()),qStudents=parsedExamStudents.filter(x=>x.riwayah==="قالون");
+  if(qStudents.length&&!qids.size)throw new Error("توجد طالبات قالون؛ اختاري معلمة واحدة على الأقل في قسم معلمات قالون.");
+  const byTeacher=new Map(groups.map(g=>[g.teacherId,g])),used=new Set(),queues=new Map(),registered=[];
+  parsedExamStudents.forEach((st,i)=>{const k=String(st.student_number)+"|"+examNorm(st.name);if(!queues.has(k))queues.set(k,[]);queues.get(k).push({st,i});});
+  for(const reg of regs){
+   const rs=reg.student||{},queue=queues.get(String(rs.student_number||"")+"|"+examNorm(rs.student_name||"")),match=queue?.find(x=>!used.has(x.i));
+   if(!match)continue;
+   const group=byTeacher.get(reg.assigned_teacher_id);
+   if(!group)throw new Error("الطالبة المسجلة («"+match.st.name+"») اختارت معلمة غير موجودة في المواعيد الحالية. راجعي المواعيد أو التسجيل.");
+   if(match.st.riwayah==="قالون"&&!qids.has(group.teacherId))throw new Error("الطالبة («"+match.st.name+"») من قالون ومسجلة عند معلمة غير محددة لاستقبال قالون.");
+   if(group.students.length>=group.capacity)throw new Error("عدد المسجلات عند المعلمة "+group.teacherName+" أكبر من سعتها الحالية. راجعي مدة الطالبة أو وقت المعلمة.");
+   group.students.push(match.st);used.add(match.i);registered.push(match.st);
+  }
+  if(!registered.length){
+   const qgroups=groups.filter(g=>qids.has(g.teacherId));
    qStudents.forEach((st,i)=>qgroups[i%qgroups.length].students.push(st));
    qgroups.forEach(g=>{if(g.students.length>g.capacity)g.capacity=g.students.length;});
+   const normal=parsedExamStudents.filter(x=>x.riwayah!=="قالون"),available=groups.filter(g=>g.capacity>g.students.length);
+   const cap=available.reduce((sum,g)=>sum+g.capacity-g.students.length,0);
+   if(normal.length>cap)throw new Error("الوقت المتاح لا يكفي طالبات حفص/ورش بعد تخصيص وقت طالبات قالون.");
+   const targets=available.map(g=>({g,n:0}));let left=normal.length;
+   while(left){const active=targets.filter(x=>x.n<x.g.capacity-x.g.students.length);if(!active.length)throw new Error("تعذر توزيع كل الطالبات على السعة المتاحة.");const min=Math.min(...active.map(x=>x.n));for(const x of active.filter(x=>x.n===min)){if(left){x.n++;left--;}}}
+   let pos=0;targets.forEach(x=>{for(let i=0;i<x.n;i++)x.g.students.push(normal[pos++]);});
+  }else{
+   const remainder=parsedExamStudents.map((st,i)=>({st,i})).filter(x=>!used.has(x.i));
+   for(let i=remainder.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[remainder[i],remainder[j]]=[remainder[j],remainder[i]];}
+   for(const item of remainder){
+    const eligible=item.st.riwayah==="قالون"?groups.filter(g=>qids.has(g.teacherId)):groups;
+    const available=eligible.filter(g=>g.students.length<g.capacity);
+    if(!available.length)throw new Error("لا توجد سعة كافية لتوزيع الطالبة "+item.st.name+" مع مراعاة الرواية واختيارات التسجيل.");
+    const min=Math.min(...available.map(g=>g.students.length)),balanced=available.filter(g=>g.students.length===min);
+    balanced[Math.floor(Math.random()*balanced.length)].students.push(item.st);
+   }
+   const order=new Map(parsedExamStudents.map((st,i)=>[st,i]));groups.forEach(g=>g.students.sort((a,b)=>(order.get(a)??0)-(order.get(b)??0)));
   }
-  const available=groups.filter(g=>g.capacity>g.students.length);
-  const cap=available.reduce((sum,g)=>sum+g.capacity-g.students.length,0);
-  if(normal.length>cap)throw new Error("الوقت المتاح لا يكفي طالبات حفص/ورش بعد تخصيص وقت طالبات قالون.");
-  const targets=available.map(g=>({g,n:0}));let left=normal.length;
-  while(left){const active=targets.filter(x=>x.n<x.g.capacity-x.g.students.length);if(!active.length)throw new Error("تعذر توزيع كل الطالبات على السعة المتاحة.");const min=Math.min(...active.map(x=>x.n));for(const x of active.filter(x=>x.n===min)){if(left){x.n++;left--;}}}
-  let pos=0;targets.forEach(x=>{for(let i=0;i<x.n;i++)x.g.students.push(normal[pos++]);});
   groups.forEach(g=>{let t=g.start;g.students.forEach(st=>{st.start=t;st.end=t+dur;t+=dur;});});
-  generatedExamGroups=groups.filter(g=>g.students.length);
-  renderGeneratedGroups(generatedExamGroups,parsedExamStudents.length,qStudents.length);
-  $("listGenerationStatus").className="status ok";$("listGenerationStatus").textContent="تم إنشاء "+generatedExamGroups.length+" قائمة وتوزيع "+parsedExamStudents.length+" طالبة.";
+  generatedExamGroups=groups.filter(g=>g.students.length);renderGeneratedGroups(generatedExamGroups,parsedExamStudents.length,qStudents.length);
+  $("listGenerationStatus").className="status ok";
+  $("listGenerationStatus").textContent=registered.length?"تم إنشاء "+generatedExamGroups.length+" قائمة. تم تثبيت "+registered.length+" طالبة مسجلة مع المعلمات اللاتي اخترنها، وتوزيع الباقي عشوائيًا مع موازنة الأعداد.":"لم توجد تسجيلات من القائمة الحالية؛ تم إنشاء "+generatedExamGroups.length+" قائمة بالطريقة القديمة حسب ترتيب الطالبات.";
+  if(examId){const groupsToSave=generatedExamGroups.map(g=>({teacherId:g.teacherId,teacherName:g.teacherName,start:g.start,end:g.end,capacity:g.capacity,students:(g.students||[]).map(st=>({name:st.name,student_number:st.student_number,riwayah:st.riwayah,start:st.start,end:st.end}))}));try{await api("admin_save_workspace",{exam_id:examId,students_input:$("studentsInput").value,schedule_input:$("scheduleInput").value,list_duration_minutes:dur,generated_lists:groupsToSave});}catch(err){status("listGenerationStatus","تم إنشاء القوائم، لكن تعذر حفظها تلقائيًا: "+readable(err),"warn");}}
  }catch(e){$("listGenerationStatus").className="status bad";$("listGenerationStatus").textContent=e.message;}
 }
 ["studentsInput","scheduleInput"].forEach(id=>$(id).addEventListener("focus",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};}));
@@ -681,8 +707,8 @@ $("toggleStudentNames").addEventListener("click",()=>{
 $("clearStudentsBtn").addEventListener("click",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};$("studentsInput").value="";parsedExamStudents=[];$("studentsStatus").textContent="";$("studentsStats").innerHTML="";$("studentsPreview").innerHTML="";$("studentsPreview").classList.add("hidden");$("toggleStudentNames").textContent="👁️ إظهار أسماء الطالبات";$("toggleStudentNames").setAttribute("aria-expanded","false");$("studentIssues").innerHTML="";$("generatedLists").innerHTML="";$("listReview").innerHTML="";$("listGenerationStatus").textContent="";});
 $("undoInputsBtn").addEventListener("click",()=>{if(!previousExamInputs){status("studentsStatus","لا يوجد تعديل سابق محفوظ للتراجع إليه.","bad");return;}$("studentsInput").value=previousExamInputs.students;$("scheduleInput").value=previousExamInputs.schedule;parseExamStudents();parseSchedule();});
 $("undoScheduleBtn").addEventListener("click",()=>{if(previousExamInputs){$("scheduleInput").value=previousExamInputs.schedule;parseSchedule();}else status("scheduleStatus","لا يوجد تعديل سابق محفوظ للتراجع إليه.","bad");});
-$("selectAllQalunBtn").addEventListener("click",()=>document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=true));
-$("clearQalunBtn").addEventListener("click",()=>document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=false));
+$("selectAllQalunBtn").addEventListener("click",()=>{document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=true);if($("examSelect").value)saveQalunChoices();});
+$("clearQalunBtn").addEventListener("click",()=>{document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=false);if($("examSelect").value)saveQalunChoices();});
 $("generateListsBtn").addEventListener("click",generateExamLists);
 document.querySelectorAll('input[name="listDuration"]').forEach(r=>r.addEventListener("change",()=>{ $("examDuration").value=r.value; if(parsedSchedule.length)renderParsedSchedule(); }));
 
@@ -959,7 +985,7 @@ function renderParsedSchedule(){
   else if(scheduleIssues.length)status("scheduleStatus","تم تحليل "+parsedSchedule.length+" موعد، لكن هناك "+scheduleIssues.length+" سطر يحتاج مراجعة قبل الحفظ.","warn");
   else status("scheduleStatus","تم تحليل المواعيد بنجاح. راجعي الجدول ثم احفظي مواعيد الاختبار.","ok");
 }
-$("parseScheduleBtn").addEventListener("click",parseSchedule);
+$("parseScheduleBtn").addEventListener("click",()=>{parseSchedule();if(parsedSchedule.length&&$("examSelect").value)$("saveScheduleBtn").click();});
 $("clearScheduleBtn").addEventListener("click",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};$("scheduleInput").value="";parsedSchedule=[];scheduleIssues=[];$("scheduleStats").innerHTML="";$("schedulePreview").innerHTML="";$("scheduleIssues").innerHTML="";renderQalunChoices();$("saveScheduleBtn").disabled=true;$("scheduleStatus").className="status";$("scheduleStatus").textContent="";});
 $("saveScheduleBtn").addEventListener("click",async()=>{
   const examId=$("examSelect").value;if(!examId){status("scheduleStatus","احفظي بيانات الاختبار أولًا ثم اختاريه من قائمة الاختبارات.","bad");return;}if(!parsedSchedule.length)return;
@@ -982,45 +1008,33 @@ $("saveScheduleBtn").addEventListener("click",async()=>{
   finally{btn.disabled=!parsedSchedule.length;btn.textContent="💾 حفظ مواعيد الاختبار";}
 });
 
-async function saveAllExamWorkspace(){
- const btn=$("saveAllWorkspaceBtn");btn.disabled=true;btn.textContent="جارٍ حفظ كل البيانات...";
- const lockedControls=[...document.querySelectorAll("#examSelect,#newExamBtn,#examTitle,#examDate,#examDuration,#registrationState,#examInstructions,#studentsInput,#scheduleInput,input[name=\"listDuration\"],.examQalunCheck")];
- const previousDisabled=lockedControls.map(el=>el.disabled);
- lockedControls.forEach(el=>el.disabled=true);
+async function saveAllExamWorkspace(publish=false){
+ const btn=publish?$("publishExamBtn"):$("saveAllWorkspaceBtn"),originalText=btn.textContent;btn.disabled=true;btn.textContent=publish?"جارٍ حفظ البيانات ونشر الاختبار...":"جارٍ حفظ بيانات الاختبار...";
+ const locked=[...document.querySelectorAll('#examSelect,#newExamBtn,#examTitle,#examDate,#examDuration,#registrationState,#examInstructions,#studentsInput,#scheduleInput,input[name="listDuration"],.examQalunCheck')],previous=locked.map(el=>el.disabled);locked.forEach(el=>el.disabled=true);
  try{
   parseExamStudents();parseSchedule();
-  if(!parsedExamStudents.length)throw new Error("الصقي قائمة الطالبات واضغطي «فصل الطالبات» أولًا.");
+  if(!parsedExamStudents.length)throw new Error("الصقي قائمة الطالبات أولًا.");
   if(parsedExamStudents.some(x=>!x.student_number))throw new Error("فيه طالبة بدون رقم واضح. راجعي القائمة قبل الحفظ.");
   if(!parsedSchedule.length)throw new Error("الصقي رسالة مواعيد المعلمات واضغطي «تحليل المواعيد» أولًا.");
   if(scheduleIssues.length&&!confirm("فيه "+scheduleIssues.length+" سطر في رسالة المواعيد يحتاج مراجعة. سيتم حفظ المواعيد التي تم التعرف عليها فقط. هل تريدين الاستمرار؟"))return;
-  const examId=$("editExamId").value;
-  const duration=Number(document.querySelector('input[name="listDuration"]:checked')?.value||5)===10?10:5;
-  const savedExam=await api("admin_save_exam",{exam_id:examId||undefined,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:(examId?(exams.find(x=>x.id===examId)?.status||"draft"):"draft"),registration_state:$("registrationState").value,instructions:$("examInstructions").value});
-  const id=savedExam.exam.id;
-  $("examSelect").value=id;$("editExamId").value=id;
-  exams=[savedExam.exam,...exams.filter(x=>x.id!==id)];
-  const students=parsedExamStudents.map(x=>({student_number:String(x.student_number),student_name:x.name,riwaya:/قالون/.test(x.riwayah)?"qalun":"hafs"}));
-  const imported=await api("admin_import_students",{exam_id:id,students});
-  const qids=new Set(selectedExamQalun()),grouped=new Map();
-  parsedSchedule.forEach(slot=>{const cur=grouped.get(slot.teacherId);if(!cur)grouped.set(slot.teacherId,{...slot});else{cur.start=Math.min(cur.start,slot.start);cur.end=Math.max(cur.end,slot.end);cur.sourceLine+=" / "+slot.sourceLine;}});
-  await runLimited(teachers.filter(t=>t.is_active!==false),6,async teacher=>{
-   const slot=grouped.get(teacher.id);
-   if(slot)await api("admin_save_teacher_settings",{exam_id:id,teacher_id:teacher.id,is_available:true,accepts_qalun:qids.has(teacher.id),start_time:scheduleClock(slot.start),end_time:scheduleClock(slot.end),capacity:Math.max(0,Math.floor((slot.end-slot.start)/duration)),capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:("مستخرج تلقائيًا من رسالة المواعيد: "+slot.sourceLine).slice(0,1000)});
-   else await api("admin_save_teacher_settings",{exam_id:id,teacher_id:teacher.id,is_available:false,accepts_qalun:false,start_time:null,end_time:null,capacity:0,capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:"لم تظهر هذه المعلمة في رسالة مواعيد الاختبار."});
-  });
+  const examId=$("editExamId").value,duration=Number(document.querySelector('input[name="listDuration"]:checked')?.value||5)===10?10:5,oldStatus=examId?(exams.find(x=>x.id===examId)?.status||"draft"):"draft";
+  const saved=await api("admin_save_exam",{exam_id:examId||undefined,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:publish?"published":oldStatus,registration_state:$("registrationState").value,instructions:$("examInstructions").value});
+  const id=saved.exam.id;$("examSelect").value=id;$("editExamId").value=id;exams=[saved.exam,...exams.filter(x=>x.id!==id)];
+  const students=parsedExamStudents.map(x=>({student_number:String(x.student_number),student_name:x.name,riwaya:/قالون/.test(x.riwayah)?"qalun":"hafs"})),imported=await api("admin_import_students",{exam_id:id,students});
+  const qids=new Set(selectedExamQalun()),grouped=new Map();parsedSchedule.forEach(slot=>{const cur=grouped.get(slot.teacherId);if(!cur)grouped.set(slot.teacherId,{...slot});else{cur.start=Math.min(cur.start,slot.start);cur.end=Math.max(cur.end,slot.end);cur.sourceLine+=" / "+slot.sourceLine;}});
+  await runLimited(teachers.filter(t=>t.is_active!==false),6,async teacher=>{const slot=grouped.get(teacher.id);if(slot)await api("admin_save_teacher_settings",{exam_id:id,teacher_id:teacher.id,is_available:true,accepts_qalun:qids.has(teacher.id),start_time:scheduleClock(slot.start),end_time:scheduleClock(slot.end),capacity:Math.max(0,Math.floor((slot.end-slot.start)/duration)),capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:("مستخرج تلقائيًا من رسالة المواعيد: "+slot.sourceLine).slice(0,1000)});else await api("admin_save_teacher_settings",{exam_id:id,teacher_id:teacher.id,is_available:false,accepts_qalun:false,start_time:null,end_time:null,capacity:0,capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:"لم تظهر هذه المعلمة في رسالة مواعيد الاختبار."});});
   const groupsToSave=generatedExamGroups.map(g=>({teacherId:g.teacherId,teacherName:g.teacherName,start:g.start,end:g.end,capacity:g.capacity,students:(g.students||[]).map(st=>({name:st.name,student_number:st.student_number,riwayah:st.riwayah,start:st.start,end:st.end}))}));
   await api("admin_save_workspace",{exam_id:id,students_input:$("studentsInput").value,schedule_input:$("scheduleInput").value,list_duration_minutes:duration,generated_lists:groupsToSave});
-  const finalExamResult=await api("admin_save_exam",{exam_id:id,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:"published",registration_state:$("registrationState").value,instructions:$("examInstructions").value});
-  const finalExam=finalExamResult.exam;exams=[finalExam,...exams.filter(x=>x.id!==id)];
-  savedQalunTeacherIds=qids;fillExamForm(finalExam);workspaceLoadedExamId="";
-  await loadDashboard();await renderTeachers();
-  selectedPublicExamId=id;await loadPublicExam(id);
-  status("saveAllWorkspaceStatus","تم حفظ كل البيانات وقائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون، ونُشر الاختبار للطالبات. حالة التسجيل الحالية: "+({"open":"مفتوح","closed":"مغلق","paused":"متوقف مؤقتًا"}[finalExam.registration_state]||finalExam.registration_state)+".","ok");
-  status("adminStatus","تم حفظ إعدادات الاختبار ونشره. يمكنك اختيار أي اختبار من قائمة «الاختبار الحالي».","ok");
+  const finalResult=await api("admin_save_exam",{exam_id:id,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:publish?"published":oldStatus,registration_state:$("registrationState").value,instructions:$("examInstructions").value}),finalExam=finalResult.exam;
+  exams=[finalExam,...exams.filter(x=>x.id!==id)];savedQalunTeacherIds=qids;fillExamForm(finalExam);workspaceLoadedExamId="";
+  await loadDashboard();await renderTeachers();selectedPublicExamId=id;await loadPublicExam(id);
+  status("saveAllWorkspaceStatus",publish?"تم حفظ البيانات ونشر الاختبار. قائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون محفوظة. حالة التسجيل: "+({"open":"مفتوح","closed":"مغلق","paused":"متوقف مؤقتًا"}[finalExam.registration_state]||finalExam.registration_state)+".":"تم حفظ بيانات الاختبار وقائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون دون نشر اختبار جديد. يمكنك إنشاء القوائم الآن أو نشر الاختبار لاحقًا.","ok");
+  status("adminStatus",publish?"تم حفظ إعدادات الاختبار ونشره.":"تم حفظ إعدادات الاختبار دون نشره.","ok");
  }catch(e){status("saveAllWorkspaceStatus",readable(e),"bad");}
- finally{lockedControls.forEach((el,i)=>{if(el.isConnected)el.disabled=previousDisabled[i];});btn.disabled=false;btn.textContent="💾 حفظ كل البيانات ونشر الاختبار";}
+ finally{locked.forEach((el,i)=>{if(el.isConnected)el.disabled=previous[i];});btn.disabled=false;btn.textContent=originalText;}
 }
-$("saveAllWorkspaceBtn").addEventListener("click",saveAllExamWorkspace);
+$("saveAllWorkspaceBtn").addEventListener("click",()=>saveAllExamWorkspace(false));
+$("publishExamBtn").addEventListener("click",()=>saveAllExamWorkspace(true));
 
 async function loadAdminPublicRefresh(){await loadPublicExam();}
 await loadPublicExam();
