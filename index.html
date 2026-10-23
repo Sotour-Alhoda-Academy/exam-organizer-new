@@ -656,6 +656,7 @@ async function generateExamLists(){
   if(!groups.length)throw new Error("لا توجد سعة صالحة في المواعيد.");
   const qids=new Set(selectedExamQalun()),qStudents=parsedExamStudents.filter(x=>x.riwayah==="قالون");
   if(qStudents.length&&!qids.size)throw new Error("توجد طالبات قالون؛ اختاري معلمة واحدة على الأقل في قسم معلمات قالون.");
+  if(qStudents.length&&!groups.some(g=>qids.has(g.teacherId)))throw new Error("لا توجد سعة زمنية كافية لدى معلمات قالون المختارات. راجعي مدة الطالبة أو مواعيدهن.");
   const byTeacher=new Map(groups.map(g=>[g.teacherId,g])),used=new Set(),queues=new Map(),registered=[];
   parsedExamStudents.forEach((st,i)=>{const k=String(st.student_number)+"|"+examNorm(st.name);if(!queues.has(k))queues.set(k,[]);queues.get(k).push({st,i});});
   for(const reg of regs){
@@ -1021,7 +1022,7 @@ async function saveAllExamWorkspace(publish=false){
   if(!parsedSchedule.length)throw new Error("الصقي رسالة مواعيد المعلمات واضغطي «تحليل المواعيد» أولًا.");
   if(scheduleIssues.length&&!confirm("فيه "+scheduleIssues.length+" سطر في رسالة المواعيد يحتاج مراجعة. سيتم حفظ المواعيد التي تم التعرف عليها فقط. هل تريدين الاستمرار؟"))return;
   const examId=$("editExamId").value,duration=Number(document.querySelector('input[name="listDuration"]:checked')?.value||5)===10?10:5,oldStatus=examId?(exams.find(x=>x.id===examId)?.status||"draft"):"draft";
-  const saved=await api("admin_save_exam",{exam_id:examId||undefined,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:publish?"published":oldStatus,registration_state:$("registrationState").value,instructions:$("examInstructions").value});
+  const saved=await api("admin_save_exam",{exam_id:examId||undefined,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:oldStatus,registration_state:$("registrationState").value,instructions:$("examInstructions").value});
   const id=saved.exam.id;$("examSelect").value=id;$("editExamId").value=id;exams=[saved.exam,...exams.filter(x=>x.id!==id)];
   const students=parsedExamStudents.map(x=>({student_number:String(x.student_number),student_name:x.name,riwaya:/قالون/.test(x.riwayah)?"qalun":"hafs"})),imported=await api("admin_import_students",{exam_id:id,students});
   const qids=new Set(selectedExamQalun()),grouped=new Map();parsedSchedule.forEach(slot=>{const cur=grouped.get(slot.teacherId);if(!cur)grouped.set(slot.teacherId,{...slot});else{cur.start=Math.min(cur.start,slot.start);cur.end=Math.max(cur.end,slot.end);cur.sourceLine+=" / "+slot.sourceLine;}});
