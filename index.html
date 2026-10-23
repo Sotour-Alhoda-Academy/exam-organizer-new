@@ -152,6 +152,11 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <label for="examSelect">الاختبار الحالي</label>
 <select id="examSelect"><option value="">لا توجد اختبارات</option></select>
 <div class="actions"><button class="soft" id="refreshAdmin" type="button">تحديث البيانات</button></div>
+<div class="card" id="finishExamPanel" style="margin-top:14px;border:1px solid #efcaca;background:#fffafa">
+  <h3 style="margin:0 0 6px;color:#a12626">إنهاء الاختبار</h3>
+  <p class="hint">بعد انتهاء الاختبار، يمكنك حذف بياناته نهائيًا. سيُحذف الاختبار وتسجيلات الطالبات وقائمتهن ومواعيده والبلاغات والإعدادات وسجل الأحداث المرتبط به. لن تُحذف بيانات المعلمات نفسها، ولن يمكن التراجع عن الحذف.</p>
+  <div class="actions"><button type="button" id="deleteExamBtn" class="gray" style="background:#a12626;color:white;border-color:#a12626" disabled>🗑️ حذف بيانات الاختبار نهائيًا</button></div>
+</div>
 <div id="dashboardStats" class="stats"></div>
 </div>
 
@@ -432,6 +437,40 @@ $("loginForm").addEventListener("submit",async e=>{
 });
 $("logoutBtn").addEventListener("click",async()=>{await supabase.auth.signOut();accessToken=null;dashboard=null;await refreshSession();});
 $("refreshAdmin").addEventListener("click",()=>{workspaceLoadedExamId="";loadAdmin();});
+$("deleteExamBtn").addEventListener("click",async()=>{
+  const examId=$("examSelect").value;
+  const exam=exams.find(x=>x.id===examId);
+  if(!exam){status("adminStatus","اختاري الاختبار الذي تريدين حذفه أولًا.","bad");return;}
+  const confirmed=confirm(
+    "تحذير: حذف نهائي لا يمكن التراجع عنه.\n\n"+
+    "الاختبار: «"+exam.title+"»\n\n"+
+    "سيتم حذف بيانات الاختبار بالكامل، بما فيها تسجيلات الطالبات، وقائمة الطالبات، والمواعيد والقوائم المُنشأة، والبلاغات والإعدادات وسجل الأحداث المرتبط بالاختبار.\n\n"+
+    "لن تُحذف بيانات المعلمات العامة.\n\nهل أنتِ متأكدة من حذف هذا الاختبار وكل بياناته؟"
+  );
+  if(!confirmed)return;
+  const btn=$("deleteExamBtn"),oldText=btn.textContent;
+  btn.disabled=true;btn.textContent="جارٍ حذف بيانات الاختبار...";
+  try{
+    const result=await api("admin_delete_exam",{exam_id:examId});
+    workspaceLoadedExamId="";savedQalunTeacherIds=new Set();generatedExamGroups=[];parsedExamStudents=[];parsedSchedule=[];scheduleIssues=[];
+    $("generatedLists").innerHTML="";$("listReview").innerHTML="";
+    await loadAdmin();
+    if(!exams.length){
+      $("examForm").reset();$("editExamId").value="";$("examDuration").value="5";$("registrationState").value="closed";
+      $("studentsInput").value="";$("scheduleInput").value="";
+      $("studentsPreview").innerHTML="";$("schedulePreview").innerHTML="";$("scheduleStats").innerHTML="";
+      $("studentsStats").innerHTML="";$("studentIssues").innerHTML="";$("scheduleIssues").innerHTML="";
+      $("generatedLists").innerHTML="";$("listReview").innerHTML="";
+      workspaceLoadedExamId="";
+    }
+    status("adminStatus","تم حذف الاختبار «"+(result.result?.title||exam.title)+"» وكل بياناته المرتبطة بنجاح.","ok");
+  }catch(err){
+    status("adminStatus",readable(err),"bad");
+  }finally{
+    btn.textContent=oldText;
+    btn.disabled=!$("examSelect").value;
+  }
+});
 $("examDuration").addEventListener("change",()=>{if(parsedSchedule.length)renderParsedSchedule();});
 $("examSelect").addEventListener("change",async()=>{
   const exam=exams.find(x=>x.id===$("examSelect").value);
@@ -458,7 +497,9 @@ async function loadAdmin() {
     if(exams.some(x=>x.id===prior)) $("examSelect").value=prior;
     else if(exams.length) $("examSelect").value=exams[0].id;
     const selected=exams.find(x=>x.id===$("examSelect").value);
+    $("deleteExamBtn").disabled=!selected;
     if(selected)fillExamForm(selected);
+    else {$("examForm").reset();$("editExamId").value="";$("studentsInput").value="";$("scheduleInput").value="";}
     await loadDashboard(); await renderTeachers();
     status("adminStatus","تم تحميل بيانات الإدارة.","ok");
   } catch(e) { status("adminStatus",readable(e),"bad"); if(["ADMIN_AUTH_INVALID","ADMIN_AUTH_REQUIRED"].includes(e.message)){await supabase.auth.signOut();await refreshSession();} }
