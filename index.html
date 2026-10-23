@@ -195,7 +195,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 فاطمة محمد 12 إلى 1
 مرفت 2 م - 3 م"></textarea>
 <div class="actions">
-<button type="button" id="parseScheduleBtn" class="primary">🔍 تحليل المواعيد وحفظها تلقائيًا</button>
+<button type="button" id="parseScheduleBtn" class="primary">🔍 تحليل المواعيد فقط</button>
 <button type="button" id="clearScheduleBtn" class="gray">🗑️ مسح</button><button type="button" id="undoScheduleBtn" class="gray">↩️ تراجع</button>
 <button type="button" id="saveScheduleBtn" class="green" disabled style="display:none">💾 حفظ مواعيد الاختبار</button>
 </div>
@@ -494,7 +494,7 @@ function showAdminView(mode){
   if(home){$("adminStatus").textContent="";}
 }
 function clearWorkspaceForNewExam(){
-  $("examForm").reset();$("editExamId").value="";$("examDuration").value="5";$("registrationState").value="closed";
+  $("examSelect").value="";dashboard=null;$("examForm").reset();$("editExamId").value="";$("examDuration").value="5";$("registrationState").value="closed";
   $("studentsInput").value="";$("scheduleInput").value="";
   document.querySelectorAll('input[name="listDuration"]').forEach(r=>r.checked=r.value==="5");
   parsedExamStudents=[];parsedSchedule=[];scheduleIssues=[];generatedExamGroups=[];savedQalunTeacherIds=new Set();workspaceLoadedExamId="";
@@ -591,7 +591,7 @@ async function loadAdmin() {
     const prior=$("examSelect").value;
     $("examSelect").innerHTML=exams.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+' · '+safe(x.status)+'</option>').join("")||'<option value="">لا توجد اختبارات</option>';
     if(exams.some(x=>x.id===prior)) $("examSelect").value=prior;
-    else if(exams.length && adminViewMode!=="saved") $("examSelect").value=exams[0].id;
+    else if(exams.length && (adminViewMode==="saved"||adminViewMode==="saved-details")) $("examSelect").value=exams[0].id;
     else $("examSelect").value="";
     const selected=exams.find(x=>x.id===$("examSelect").value);
     $("deleteExamBtn").disabled=!selected;
@@ -1177,9 +1177,9 @@ renderScheduleIssues();
   $("saveScheduleBtn").disabled=!parsedSchedule.length||!$("examSelect").value;
   if(!parsedSchedule.length)status("scheduleStatus","لم أتعرف على أي موعد صالح. تأكدي أن أسماء المعلمات موجودة في قائمة المعلمات المحفوظة.","bad");
   else if(scheduleIssues.length)status("scheduleStatus","تم تحليل "+parsedSchedule.length+" موعد، لكن هناك "+scheduleIssues.length+" سطر يحتاج مراجعة قبل الحفظ.","warn");
-  else status("scheduleStatus","تم تحليل المواعيد بنجاح. راجعي الجدول ثم احفظي مواعيد الاختبار.","ok");
+  else status("scheduleStatus","تم تحليل المواعيد بنجاح. راجعي الجدول، وسيتم حفظ المواعيد عند الضغط على «حفظ بيانات الاختبار».","ok");
 }
-$("parseScheduleBtn").addEventListener("click",()=>{parseSchedule();if(parsedSchedule.length&&$("examSelect").value)$("saveScheduleBtn").click();});
+$("parseScheduleBtn").addEventListener("click",()=>{parseSchedule();});
 $("clearScheduleBtn").addEventListener("click",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};$("scheduleInput").value="";parsedSchedule=[];scheduleIssues=[];$("scheduleStats").innerHTML="";$("schedulePreview").innerHTML="";$("scheduleIssues").innerHTML="";renderQalunChoices();$("saveScheduleBtn").disabled=true;$("scheduleStatus").className="status";$("scheduleStatus").textContent="";});
 $("saveScheduleBtn").addEventListener("click",async()=>{
   const examId=$("examSelect").value;if(!examId){status("scheduleStatus","احفظي بيانات الاختبار أولًا ثم اختاريه من قائمة الاختبارات.","bad");return;}if(!parsedSchedule.length)return;
@@ -1213,6 +1213,11 @@ async function saveAllExamWorkspace(publish=false){
   if(!parsedExamStudents.length)throw new Error("الصقي قائمة الطالبات أولًا.");
   if(parsedExamStudents.some(x=>!x.student_number))throw new Error("فيه طالبة بدون رقم واضح. راجعي القائمة قبل الحفظ.");
   if(!parsedSchedule.length)throw new Error("الصقي رسالة مواعيد المعلمات واضغطي «تحليل المواعيد» أولًا.");
+  const capacityDuration=Number(document.querySelector('input[name="listDuration"]:checked')?.value||5)===10?10:5;
+  const capacityByTeacher=new Map();
+  parsedSchedule.forEach(slot=>{const current=capacityByTeacher.get(slot.teacherId);if(!current)capacityByTeacher.set(slot.teacherId,{start:slot.start,end:slot.end});else{current.start=Math.min(current.start,slot.start);current.end=Math.max(current.end,slot.end);}});
+  const totalCapacity=[...capacityByTeacher.values()].reduce((sum,slot)=>sum+Math.max(0,Math.floor((slot.end-slot.start)/capacityDuration)),0);
+  if(totalCapacity<parsedExamStudents.length)throw new Error("وقت المعلمات غير كافٍ لاختبار جميع الطالبات. عدد الطالبات: "+parsedExamStudents.length+"، والسعة المتاحة: "+totalCapacity+". عدّلي المواعيد أو مدة الاختبار ثم حاولي الحفظ مرة أخرى.");
   if(scheduleIssues.length&&!confirm("فيه "+scheduleIssues.length+" سطر في رسالة المواعيد يحتاج مراجعة. سيتم حفظ المواعيد التي تم التعرف عليها فقط. هل تريدين الاستمرار؟"))return;
   const examId=$("editExamId").value,duration=Number(document.querySelector('input[name="listDuration"]:checked')?.value||5)===10?10:5,oldStatus=examId?(exams.find(x=>x.id===examId)?.status||"draft"):"draft";
   const saved=await api("admin_save_exam",{exam_id:examId||undefined,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:oldStatus,registration_state:$("registrationState").value,instructions:$("examInstructions").value});
