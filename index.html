@@ -696,28 +696,32 @@ async function generateExamLists(){
    if(group.students.length>=group.capacity)throw new Error("عدد المسجلات عند المعلمة "+group.teacherName+" أكبر من سعتها الحالية. راجعي مدة الطالبة أو وقت المعلمة.");
    group.students.push(match.st);used.add(match.i);registered.push(match.st);
   }
-  if(!registered.length){
-   const qgroups=groups.filter(g=>qids.has(g.teacherId));
-   qStudents.forEach((st,i)=>qgroups[i%qgroups.length].students.push(st));
-   qgroups.forEach(g=>{if(g.students.length>g.capacity)g.capacity=g.students.length;});
-   const normal=parsedExamStudents.filter(x=>x.riwayah!=="قالون"),available=groups.filter(g=>g.capacity>g.students.length);
-   const cap=available.reduce((sum,g)=>sum+g.capacity-g.students.length,0);
-   if(normal.length>cap)throw new Error("الوقت المتاح لا يكفي طالبات حفص/ورش بعد تخصيص وقت طالبات قالون.");
-   const targets=available.map(g=>({g,n:0}));let left=normal.length;
-   while(left){const active=targets.filter(x=>x.n<x.g.capacity-x.g.students.length);if(!active.length)throw new Error("تعذر توزيع كل الطالبات على السعة المتاحة.");const min=Math.min(...active.map(x=>x.n));for(const x of active.filter(x=>x.n===min)){if(left){x.n++;left--;}}}
-   let pos=0;targets.forEach(x=>{for(let i=0;i<x.n;i++)x.g.students.push(normal[pos++]);});
-  }else{
-   const remainder=parsedExamStudents.map((st,i)=>({st,i})).filter(x=>!used.has(x.i));
-   for(let i=remainder.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[remainder[i],remainder[j]]=[remainder[j],remainder[i]];}
-   for(const item of remainder){
-    const eligible=item.st.riwayah==="قالون"?groups.filter(g=>qids.has(g.teacherId)):groups;
-    const available=eligible.filter(g=>g.students.length<g.capacity);
-    if(!available.length)throw new Error("لا توجد سعة كافية لتوزيع الطالبة "+item.st.name+" مع مراعاة الرواية واختيارات التسجيل.");
-    const min=Math.min(...available.map(g=>g.students.length)),balanced=available.filter(g=>g.students.length===min);
-    balanced[Math.floor(Math.random()*balanced.length)].students.push(item.st);
-   }
-   const order=new Map(parsedExamStudents.map((st,i)=>[st,i]));groups.forEach(g=>g.students.sort((a,b)=>(order.get(a)??0)-(order.get(b)??0)));
+  // ثبّتي المسجلات أولًا، ثم أضيفي غير المسجلات بترتيب القائمة الأصلية.
+  // طالبات قالون غير المسجلات يذهبن أولًا إلى المعلمات المحددات لقالون.
+  const unregistered=parsedExamStudents.map((st,i)=>({st,i})).filter(x=>!used.has(x.i));
+  const unregisteredQalun=unregistered.filter(x=>x.st.riwayah==="قالون");
+  const unregisteredNormal=unregistered.filter(x=>x.st.riwayah!=="قالون");
+  const qalunGroups=groups.filter(g=>qids.has(g.teacherId));
+  for(const item of unregisteredQalun){
+    const eligible=qalunGroups.filter(g=>g.students.length<g.capacity);
+    if(!eligible.length)throw new Error("لا توجد سعة كافية لطالبات قالون غير المسجلات، مع مراعاة سعة المعلمات المختارات.");
+    // نختار أول معلمة قالون متاحة حسب ترتيب المواعيد، ولا نخلط ترتيب الطالبات.
+    eligible[0].students.push(item.st);
   }
+  // وزّعي حفص/الروايات الأخرى ككتل متتابعة حسب ترتيب المعلمات في جدول المواعيد.
+  let cursor=0;
+  for(const group of groups){
+    if(group.riwayah==="قالون" || qids.has(group.teacherId)){
+      // المعلمات المحددات لقالون لا تستقبل حفص في هذه المرحلة إلا إذا كان عندها سعة
+      // ولم تكن مخصصة حصريًا لقالون. في هذه الواجهة اختيار قالون يحدد الاستقبال.
+      if(qids.has(group.teacherId))continue;
+    }
+    const remainingCapacity=Math.max(0,group.capacity-group.students.length);
+    for(let n=0;n<remainingCapacity&&cursor<unregisteredNormal.length;n++,cursor++){
+      group.students.push(unregisteredNormal[cursor].st);
+    }
+  }
+  if(cursor<unregisteredNormal.length)throw new Error("الوقت المتاح لا يكفي لتوزيع جميع الطالبات غير المسجلات. المتبقي: "+(unregisteredNormal.length-cursor)+" طالبة.");
   groups.forEach(g=>{let t=g.start;g.students.forEach(st=>{st.start=t;st.end=t+dur;t+=dur;});});
   generatedExamGroups=groups.filter(g=>g.students.length);renderGeneratedGroups(generatedExamGroups,parsedExamStudents.length,qStudents.length);
   $("listGenerationStatus").className="status ok";
