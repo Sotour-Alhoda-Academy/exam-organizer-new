@@ -165,7 +165,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <div id="examPickerArea" class="hidden">
 <label for="examSelect">اختاري الاختبار المحفوظ</label>
 <select id="examSelect"><option value="">لا توجد اختبارات</option></select>
-<div class="actions"><button class="soft" id="refreshAdmin" type="button">🔄 تحديث البيانات</button></div>
+<div class="actions"><button class="soft" id="refreshAdmin" type="button">🔄 تحديث البيانات</button><button class="soft" id="openRegistrationsView" type="button">📋 التسجيلات</button><button class="soft" id="openIssuesView" type="button">📨 البلاغات</button></div>
 </div>
 <div id="dashboardStats" class="stats"></div>
 </div>
@@ -508,6 +508,8 @@ $("openTeachersView").addEventListener("click",()=>showAdminView("teachers"));
 $("backToAdminMenu").addEventListener("click",()=>showAdminView("home"));
 $("backFromRegistrations").addEventListener("click",()=>showAdminView("saved"));
 $("backFromIssues").addEventListener("click",()=>showAdminView("saved"));
+$("openRegistrationsView").addEventListener("click",()=>{$("registrationsCard").scrollIntoView({behavior:"smooth",block:"start"});});
+$("openIssuesView").addEventListener("click",()=>{$("issuesCard").scrollIntoView({behavior:"smooth",block:"start"});});
 $("deleteExamBtn").addEventListener("click",async()=>{
   const examId=$("examSelect").value;
   const exam=exams.find(x=>x.id===examId);
