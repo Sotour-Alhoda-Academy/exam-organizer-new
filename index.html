@@ -348,7 +348,9 @@ const messages = {
 };
 function readable(error) {
   const key = typeof error === "string" ? error : error?.message;
-  return messages[key] || (key === "Invalid login credentials" ? "كلمة مرور الإدارة غير صحيحة." : key === "Failed to fetch" ? "تعذر الاتصال بالخادم. تحققي من الإنترنت وحاولي مرة أخرى." : "حدث خطأ أثناء تنفيذ الطلب. حاولي مرة أخرى.");
+  if (messages[key]) return messages[key];
+  if (typeof key === "string" && /[\u0600-\u06FF]/.test(key)) return key;
+  return key === "Invalid login credentials" ? "كلمة مرور الإدارة غير صحيحة." : key === "Failed to fetch" ? "تعذر الاتصال بالخادم. تحققي من الإنترنت وحاولي مرة أخرى." : "حدث خطأ أثناء تنفيذ الطلب. حاولي مرة أخرى.";
 }
 function formatTeacherTimeRange(start,end){
  const parse=(v)=>{const m=String(v||"").match(/^(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null;};
@@ -1205,6 +1207,7 @@ $("saveScheduleBtn").addEventListener("click",async()=>{
 async function saveAllExamWorkspace(publish=false){
  const btn=publish?$("publishExamBtn"):$("saveAllWorkspaceBtn"),originalText=btn.textContent;btn.disabled=true;btn.textContent=publish?"جارٍ حفظ البيانات ونشر الاختبار...":"جارٍ حفظ بيانات الاختبار...";
  const locked=[...document.querySelectorAll('#examSelect,#examTitle,#examDate,#examDuration,#registrationState,#examInstructions,#studentsInput,#scheduleInput,input[name="listDuration"],.examQalunCheck')],previous=locked.map(el=>el.disabled);locked.forEach(el=>el.disabled=true);
+ let saveStage="التحقق من بيانات الطالبات والمواعيد";
  try{
   const existingQalunControls=document.querySelectorAll(".examQalunCheck").length>0;
   const selectedQalunBeforeSave=new Set(existingQalunControls?selectedExamQalun():savedQalunTeacherIds);
@@ -1220,20 +1223,30 @@ async function saveAllExamWorkspace(publish=false){
   if(totalCapacity<parsedExamStudents.length)throw new Error("وقت المعلمات غير كافٍ لاختبار جميع الطالبات. عدد الطالبات: "+parsedExamStudents.length+"، والسعة المتاحة: "+totalCapacity+". عدّلي المواعيد أو مدة الاختبار ثم حاولي الحفظ مرة أخرى.");
   if(scheduleIssues.length&&!confirm("فيه "+scheduleIssues.length+" سطر في رسالة المواعيد يحتاج مراجعة. سيتم حفظ المواعيد التي تم التعرف عليها فقط. هل تريدين الاستمرار؟"))return;
   const examId=$("editExamId").value,duration=Number(document.querySelector('input[name="listDuration"]:checked')?.value||5)===10?10:5,oldStatus=examId?(exams.find(x=>x.id===examId)?.status||"draft"):"draft";
+  saveStage="حفظ بيانات الاختبار";
   const saved=await api("admin_save_exam",{exam_id:examId||undefined,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:oldStatus,registration_state:$("registrationState").value,instructions:$("examInstructions").value});
   const id=saved.exam.id;$("examSelect").value=id;$("editExamId").value=id;exams=[saved.exam,...exams.filter(x=>x.id!==id)];
+  saveStage="حفظ قائمة الطالبات";
   const students=parsedExamStudents.map(x=>({student_number:String(x.student_number),student_name:x.name,riwaya:/قالون/.test(x.riwayah)?"qalun":"hafs"})),imported=await api("admin_import_students",{exam_id:id,students});
   const qids=new Set(selectedExamQalun()),grouped=new Map();parsedSchedule.forEach(slot=>{const cur=grouped.get(slot.teacherId);if(!cur)grouped.set(slot.teacherId,{...slot});else{cur.start=Math.min(cur.start,slot.start);cur.end=Math.max(cur.end,slot.end);cur.sourceLine+=" / "+slot.sourceLine;}});
+  saveStage="حفظ إعدادات ومواعيد المعلمات";
   await runLimited(teachers.filter(t=>t.is_active!==false),6,async teacher=>{const slot=grouped.get(teacher.id);if(slot)await api("admin_save_teacher_settings",{exam_id:id,teacher_id:teacher.id,is_available:true,accepts_qalun:qids.has(teacher.id),start_time:scheduleClock(slot.start),end_time:scheduleClock(slot.end),capacity:Math.max(0,Math.floor((slot.end-slot.start)/duration)),capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:("مستخرج تلقائيًا من رسالة المواعيد: "+slot.sourceLine).slice(0,1000)});else await api("admin_save_teacher_settings",{exam_id:id,teacher_id:teacher.id,is_available:false,accepts_qalun:false,start_time:null,end_time:null,capacity:0,capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:"لم تظهر هذه المعلمة في رسالة مواعيد الاختبار."});});
+  saveStage="حفظ بيانات مساحة العمل والقوائم المولدة";
   const groupsToSave=generatedExamGroups.map(g=>({teacherId:g.teacherId,teacherName:g.teacherName,start:g.start,end:g.end,capacity:g.capacity,students:(g.students||[]).map(st=>({name:st.name,student_number:st.student_number,riwayah:st.riwayah,start:st.start,end:st.end}))}));
   await api("admin_save_workspace",{exam_id:id,students_input:$("studentsInput").value,schedule_input:$("scheduleInput").value,list_duration_minutes:duration,generated_lists:groupsToSave});
+  saveStage=publish?"تأكيد نشر الاختبار":"تأكيد حفظ بيانات الاختبار";
   const finalResult=await api("admin_save_exam",{exam_id:id,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:publish?"published":oldStatus,registration_state:$("registrationState").value,instructions:$("examInstructions").value}),finalExam=finalResult.exam;
   exams=[finalExam,...exams.filter(x=>x.id!==id)];$("examSelect").innerHTML=exams.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+' · '+safe(x.status)+'</option>').join("")||'<option value="">لا توجد اختبارات</option>';$("examSelect").value=id;savedQalunTeacherIds=qids;fillExamForm(finalExam);workspaceLoadedExamId="";
+  saveStage="تحديث لوحة الإدارة والاختبار المتاح للطالبات";
   await loadDashboard();await renderTeachers();selectedPublicExamId=id;await loadPublicExam(id);
   status("saveAllWorkspaceStatus",publish?"تم حفظ البيانات ونشر الاختبار. قائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون محفوظة. حالة التسجيل: "+({"open":"مفتوح","closed":"مغلق","paused":"متوقف مؤقتًا"}[finalExam.registration_state]||finalExam.registration_state)+".":"تم حفظ بيانات الاختبار وقائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون دون نشر اختبار جديد. يمكنك إنشاء القوائم الآن أو نشر الاختبار لاحقًا.","ok");
   status("adminStatus",publish?"تم حفظ إعدادات الاختبار ونشره.":"تم حفظ إعدادات الاختبار دون نشره.","ok");
    if(!publish&&adminViewMode==="new")showAdminView("saved");
- }catch(e){status("saveAllWorkspaceStatus",readable(e),"bad");}
+ }catch(e){
+  const errorKey=typeof e==="string"?e:(e?.message||"UNKNOWN_ERROR");
+  const errorCode=/^[A-Z][A-Z0-9_]{2,79}$/.test(errorKey)&&!messages[errorKey]?" (رمز الخطأ: "+errorKey+")":"";
+  status("saveAllWorkspaceStatus","تعذّر إتمام العملية عند مرحلة «"+saveStage+"». "+readable(e)+errorCode,"bad");
+ }
  finally{locked.forEach((el,i)=>{if(el.isConnected)el.disabled=previous[i];});btn.disabled=false;btn.textContent=originalText;}
 }
 $("saveAllWorkspaceBtn").addEventListener("click",()=>saveAllExamWorkspace(false));
