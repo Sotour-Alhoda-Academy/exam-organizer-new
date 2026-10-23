@@ -367,7 +367,12 @@ async function loadPublicExam(requestedExamId=selectedPublicExamId) {
     if (currentExam.registration_state === "open") {
       status("publicExamStatus","التسجيل مفتوح في الاختبار المحدد. أدخلي رقم الطالبة للمتابعة.","ok"); $("lookupForm").classList.remove("hidden");
     } else {
-      status("publicExamStatus",currentExam.registration_state==="paused"?"التسجيل متوقف مؤقتًا في الاختبار المحدد.":"التسجيل مغلق في الاختبار المحدد.","warn"); $("lookupForm").classList.add("hidden");
+      if(currentExam.registration_state==="paused"){
+        const el=$("publicExamStatus");el.className="status show warn";el.innerHTML="التسجيل متوقف مؤقتًا في الاختبار المحدد.<br>عودي لاختيار الموعد المناسب بعد قليل.";
+      }else{
+        const el=$("publicExamStatus");el.className="status show bad";el.innerHTML="تم إغلاق التسجيل في هذا الاختبار.<br>من لم تُسجل سيتم توزيع اسمها عشوائيًا على قوائم المعلمات المتبقيات.";
+      }
+      $("lookupForm").classList.add("hidden");
     }
   } catch(e) { status("publicExamStatus",readable(e),"bad"); }
 }
@@ -640,7 +645,15 @@ function renderGeneratedGroups(groups,totalStudents=groups.reduce((n,g)=>n+(g.st
   generatedExamGroups=groups||[];
   const qalun=qalunCount===null?generatedExamGroups.reduce((n,g)=>n+(g.students||[]).filter(st=>st.riwayah==="قالون").length,0):qalunCount;
   $("listReview").innerHTML=generatedExamGroups.length?'<div class="review"><b>مراجعة التوزيع</b><div class="stats"><div class="stat"><b>'+totalStudents+'</b> طالبة</div><div class="stat"><b>'+generatedExamGroups.length+'</b> قائمة</div><div class="stat"><b>'+qalun+'</b> قالون</div></div>'+generatedExamGroups.map(g=>'<div class="capacity-row"><span>'+safe(g.teacherName)+'</span><span>'+g.students.length+' / '+g.capacity+'</span></div>').join("")+'</div>':'';
-  $("generatedLists").innerHTML=generatedExamGroups.map(g=>{const output="🌷( قائمة اختبار)🌷\n\nالمعلمة: "+g.teacherName+"\n\n🕐 "+scheduleFmt(g.students[0].start)+" - "+scheduleFmt(g.students[g.students.length-1].end)+"\n🔢 عدد الطالبات: "+g.students.length+"\n\n"+g.students.map((st,i)=>(i+1)+") "+st.name+(st.riwayah==="قالون"?" — قالون":"")+"\n"+scheduleFmt(st.start)+" - "+scheduleFmt(st.end)).join("\n\n")+"\n\n🌷 المواعيد بتوقيت مصر 🌷\nبرجاء الالتزام بالمواعيد";return '<div class="generated-list"><h3>'+safe(g.teacherName)+' — '+g.students.length+' طالبة</h3><div class="actions"><button class="soft" type="button" data-copy-list>📋 نسخ القائمة</button></div><pre>'+safe(output)+'</pre></div>'}).join("");
+  $("generatedLists").innerHTML=generatedExamGroups.map(g=>{
+    const t=teachers.find(x=>x.id===g.teacherId),name=(t&&(t.full_name||t.name))||g.teacherName,blank="\\n\\n";
+    let output="*🌷( قائمه اختبار)🌷*"+blank+"*المعلمة: "+name+"*"+blank+"🕐 "+scheduleFmt(g.students[0].start)+" - "+scheduleFmt(g.students[g.students.length-1].end)+blank+"🔢 عدد الطالبات: "+g.students.length+blank+"•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈"+blank;
+    output+=g.students.map((st,i)=>(i+1)+") "+st.name+(st.riwayah==="قالون"?" — قالون":"")+"\\n"+scheduleFmt(st.start)+" - "+scheduleFmt(st.end)).join(blank);
+    output+=blank+"•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈•"+blank+"*المعلمه/ "+name+"*"+blank+"*وسائل التواصل المتاحة:*"+blank;
+    if(t){if(t.phone)output+="*اتصال*\\n"+t.phone+blank;if(t.telegram)output+="▪ تليجرام\\n"+t.telegram+blank;if(t.messenger)output+="▪ مسنجر\\n"+t.messenger+blank;if(t.whatsapp)output+="▪ واتس\\n"+t.whatsapp+blank;if(t.notes)output+=t.notes+blank;}
+    output+="🌷 *المواعيد بتوقيت مصر*🌷"+blank+"🌷 *برجاء الالتزام بالمواعيد*🌷"+blank+"•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈";
+    return '<div class="generated-list"><h3>🌷 '+safe(name)+' — '+g.students.length+' طالبة</h3><div class="actions"><button class="soft" type="button" data-copy-list>📋 نسخ القائمة</button></div><pre>'+safe(output)+'</pre></div>';
+  }).join("");
   $("generatedLists").querySelectorAll("[data-copy-list]").forEach(btn=>btn.addEventListener("click",async()=>{const txt=btn.closest(".generated-list").querySelector("pre").textContent;try{await navigator.clipboard.writeText(txt);btn.textContent="✓ تم النسخ"}catch(e){const area=document.createElement("textarea");area.value=txt;document.body.appendChild(area);area.select();document.execCommand("copy");area.remove();btn.textContent="✓ تم النسخ"}}));
 }
 async function generateExamLists(){
