@@ -581,7 +581,7 @@ $("examSelect").addEventListener("change",async()=>{
   await renderTeachers();
   if(adminViewMode==="saved"||adminViewMode==="saved-details")showAdminView(exam?"saved-details":"saved");
 });
-$("toggleExamForm").addEventListener("click",()=>{const panel=$("examFormPanel"),show=panel.classList.contains("hidden");panel.classList.toggle("hidden",!show);$("toggleExamForm").setAttribute("aria-expanded",String(show));});
+$("toggleExamForm").addEventListener("click",()=>{$("examFormPanel").classList.remove("hidden");$("toggleExamForm").setAttribute("aria-expanded","true");});
 
 function fillExamForm(x) {
   $("editExamId").value=x.id; $("examTitle").value=x.title||""; $("examDate").value=x.exam_date||"";
@@ -851,15 +851,21 @@ async function generateExamLists(){
     // نختار أول معلمة قالون متاحة حسب ترتيب المواعيد، ولا نخلط ترتيب الطالبات.
     eligible[0].students.push(item.st);
   }
-  // وزّعي حفص/الروايات الأخرى ككتل متتابعة حسب ترتيب المعلمات في جدول المواعيد.
+  // احسبي توزيعًا متوازنًا أولًا، مع تثبيت المسجلات وطالبات قالون في أماكنهن.
+  // بعد حساب حصة كل معلمة، ضعي الطالبات بترتيب القائمة في كتل متتابعة.
+  const extraByTeacher=new Map(groups.map(g=>[g.teacherId,0]));
+  for(const item of unregisteredNormal){
+    const eligible=groups.filter(g=>g.students.length+(extraByTeacher.get(g.teacherId)||0)<g.capacity)
+      .sort((a,b)=>(a.students.length+(extraByTeacher.get(a.teacherId)||0))-(b.students.length+(extraByTeacher.get(b.teacherId)||0)));
+    if(!eligible.length)throw new Error("الوقت المتاح لا يكفي لتوزيع جميع الطالبات غير المسجلات. المتبقي: "+(unregisteredNormal.length-[...extraByTeacher.values()].reduce((a,b)=>a+b,0))+" طالبة.");
+    const target=eligible[0];
+    extraByTeacher.set(target.teacherId,(extraByTeacher.get(target.teacherId)||0)+1);
+  }
   let cursor=0;
   for(const group of groups){
-    const remainingCapacity=Math.max(0,group.capacity-group.students.length);
-    for(let n=0;n<remainingCapacity&&cursor<unregisteredNormal.length;n++,cursor++){
-      group.students.push(unregisteredNormal[cursor].st);
-    }
+    const extra=extraByTeacher.get(group.teacherId)||0;
+    for(let n=0;n<extra;n++,cursor++)group.students.push(unregisteredNormal[cursor].st);
   }
-  if(cursor<unregisteredNormal.length)throw new Error("الوقت المتاح لا يكفي لتوزيع جميع الطالبات غير المسجلات. المتبقي: "+(unregisteredNormal.length-cursor)+" طالبة.");
   groups.forEach(g=>{let t=g.start;g.students.forEach(st=>{st.start=t;st.end=t+dur;t+=dur;});});
   generatedExamGroups=groups.filter(g=>g.students.length);renderGeneratedGroups(generatedExamGroups,parsedExamStudents.length,qStudents.length);
   $("listGenerationStatus").className="status ok";
