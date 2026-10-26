@@ -295,6 +295,7 @@ let currentExam = null, foundStudent = null, publicTeachers = [], publicExams = 
 let publicExamLoadSeq = 0, adminDashboardLoadSeq = 0;
 let accessToken = null;
 let pendingCapacitySave = null, allowUnderCapacitySaveOnce = false;
+let loadedScheduleSnapshot = "";
 const activeStatuses = ["registered","confirmed","needs_review"];
 
 function status(id, message, kind="info") {
@@ -661,6 +662,7 @@ async function loadDashboard() {
       }
       renderQalunChoices();
       workspaceLoadedExamId=examId;
+      loadedScheduleSnapshot=$("scheduleInput").value;
       if(savedStudents.length||parsedSchedule.length)status("listGenerationStatus","تم استرجاع بيانات الاختبار المحفوظة. يمكنك إنشاء القوائم أو حفظ التعديلات.","ok");
     }
     const c=dashboard.counts||{};
@@ -1235,7 +1237,7 @@ $("saveScheduleBtn").addEventListener("click",async()=>{
 async function saveAllExamWorkspace(publish=false){
  const btn=publish?$("publishExamBtn"):$("saveAllWorkspaceBtn"),originalText=btn.textContent;btn.disabled=true;btn.textContent=publish?"جارٍ حفظ البيانات ونشر الاختبار...":"جارٍ حفظ بيانات الاختبار...";
  const locked=[...document.querySelectorAll('#examSelect,#examTitle,#examDate,#examDuration,#registrationState,#examInstructions,#studentsInput,#scheduleInput,input[name="listDuration"],.examQalunCheck')],previous=locked.map(el=>el.disabled);locked.forEach(el=>el.disabled=true);
- let saveStage="التحقق من بيانات الطالبات والمواعيد";
+ let saveStage="التحقق من بيانات الطالبات والمواعيد",regenerateListsAfterSave=false;
  try{
   const existingQalunControls=document.querySelectorAll(".examQalunCheck").length>0;
   const selectedQalunBeforeSave=new Set(existingQalunControls?selectedExamQalun():savedQalunTeacherIds);
@@ -1251,6 +1253,7 @@ async function saveAllExamWorkspace(publish=false){
   if(totalCapacity<parsedExamStudents.length&&!allowUnderCapacitySaveOnce){pendingCapacitySave=publish;$("capacityChoiceMessage").textContent="عدد الطالبات: "+parsedExamStudents.length+" — السعة الحالية: "+totalCapacity+" — المتبقي دون سعة: "+(parsedExamStudents.length-totalCapacity)+" طالبة."; $("capacityChoiceModal").classList.remove("hidden");return;} allowUnderCapacitySaveOnce=false; $("capacityChoiceModal").classList.add("hidden"); pendingCapacitySave=null;
   if(scheduleIssues.length&&!confirm("فيه "+scheduleIssues.length+" سطر في رسالة المواعيد يحتاج مراجعة. سيتم حفظ المواعيد التي تم التعرف عليها فقط. هل تريدين الاستمرار؟"))return;
   const examId=$("editExamId").value,duration=Number(document.querySelector('input[name="listDuration"]:checked')?.value||5)===10?10:5,oldStatus=examId?(exams.find(x=>x.id===examId)?.status||"draft"):"draft";
+  regenerateListsAfterSave=!!examId&&workspaceLoadedExamId===examId&&$("scheduleInput").value!==loadedScheduleSnapshot;
   saveStage="حفظ بيانات الاختبار";
   const saved=await api("admin_save_exam",{exam_id:examId||undefined,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:oldStatus,registration_state:$("registrationState").value,instructions:$("examInstructions").value});
   const id=saved.exam.id;$("examSelect").value=id;$("editExamId").value=id;exams=[saved.exam,...exams.filter(x=>x.id!==id)];
@@ -1274,8 +1277,11 @@ async function saveAllExamWorkspace(publish=false){
   selectedPublicExamId=id;
   status("saveAllWorkspaceStatus",publish?"تم حفظ البيانات ونشر الاختبار. قائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون محفوظة. حالة التسجيل: "+({"open":"مفتوح","closed":"مغلق","paused":"متوقف مؤقتًا"}[finalExam.registration_state]||finalExam.registration_state)+".":"تم حفظ بيانات الاختبار وقائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون دون نشر اختبار جديد. يمكنك إنشاء القوائم الآن أو نشر الاختبار لاحقًا.","ok");
   status("adminStatus",publish?"تم حفظ إعدادات الاختبار ونشره.":"تم حفظ إعدادات الاختبار دون نشره.","ok");
-  // لا نؤخر رسالة نجاح الحفظ بانتظار تحديث الإحصائيات والواجهة العامة؛ تُحدّث في الخلفية بعد نجاح الكتابة.
-  Promise.allSettled([loadDashboard(),renderTeachers(),loadPublicExam(id)]).then(results=>{if(results.some(x=>x.status==="rejected"))status("adminStatus","تم الحفظ بنجاح، لكن تعذر تحديث بعض بيانات العرض. استخدمي زر تحديث الإحصائيات أو أعيدي تحميل الصفحة.","warn");});
+  // عند تعديل المواعيد في اختبار محفوظ، أعد إنشاء القوائم بعد الحفظ حتى تُوزّع الطالبات المتبقيات تلقائيًا على السعة الجديدة.
+  const refreshAfterSave=()=>Promise.allSettled([loadDashboard(),renderTeachers(),loadPublicExam(id)]).then(results=>{if(results.some(x=>x.status==="rejected"))status("adminStatus","تم الحفظ بنجاح، لكن تعذر تحديث بعض بيانات العرض. استخدمي زر تحديث الإحصائيات أو أعيدي تحميل الصفحة.","warn");});
+  if(regenerateListsAfterSave){
+    generateExamLists().then(()=>{loadedScheduleSnapshot=$("scheduleInput").value;return refreshAfterSave();}).catch(()=>refreshAfterSave());
+  }else refreshAfterSave();
    if(!publish&&adminViewMode==="new")showAdminView("saved");
  }catch(e){
   const errorKey=typeof e==="string"?e:(e?.message||"UNKNOWN_ERROR");
