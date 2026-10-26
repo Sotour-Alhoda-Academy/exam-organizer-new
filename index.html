@@ -271,6 +271,14 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
   </div>
 </div>
 </div>
+<div id="capacityChoiceModal" class="teacher-manager-modal hidden" role="dialog" aria-modal="true" aria-labelledby="capacityChoiceTitle">
+  <div class="teacher-manager-box">
+    <div class="teacher-manager-head"><h3 id="capacityChoiceTitle">⚠️ سعة المعلمات غير كافية</h3><button type="button" id="closeCapacityChoice" class="gray" aria-label="إغلاق">✕</button></div>
+    <p id="capacityChoiceMessage" class="hint">عدد الطالبات أكبر من السعة المتاحة حاليًا.</p>
+    <p class="hint">اختاري إضافة معلمة الآن، أو حفظ الاختبار بالسعة الحالية وإضافة معلمة لاحقًا. الطالبات اللاتي لا يجدن موعدًا سيبقين محفوظات دون توزيع.</p>
+    <div class="actions"><button type="button" id="addTeacherNowBtn" class="soft">👩‍🏫 إضافة معلمة الآن</button><button type="button" id="addTeacherLaterBtn" class="green">🕐 إضافة معلمة لاحقًا</button></div>
+  </div>
+</div>
 </section>
 <footer>منظّم اختبارات الأكاديمية · لا تشاركي كلمة مرور الإدارة مع أي شخص</footer>
 </main>
@@ -286,6 +294,7 @@ const $ = (id) => document.getElementById(id);
 let currentExam = null, foundStudent = null, publicTeachers = [], publicExams = [], selectedPublicExamId = "", exams = [], teachers = [], dashboard = null;
 let publicExamLoadSeq = 0, adminDashboardLoadSeq = 0;
 let accessToken = null;
+let pendingCapacitySave = null, allowUnderCapacitySaveOnce = false;
 const activeStatuses = ["registered","confirmed","needs_review"];
 
 function status(id, message, kind="info") {
@@ -404,7 +413,13 @@ async function loadPublicExam(requestedExamId=selectedPublicExamId) {
     $("publicExamInfo").classList.remove("hidden");
     $("publicExamInfo").innerHTML = '<div class="stats"><div class="stat"><b>'+safe(currentExam.title)+'</b><span>الاختبار</span></div><div class="stat"><b>'+safe(currentExam.exam_date||"لم يُحدد")+'</b><span>التاريخ</span></div><div class="stat"><b>'+safe(currentExam.default_duration_minutes)+' دقائق</b><span>مدة الطالبة</span></div></div>' + (currentExam.instructions?'<p class="hint">'+safe(currentExam.instructions)+'</p>':"");
     if (currentExam.registration_state === "open") {
-      status("publicExamStatus","التسجيل مفتوح في الاختبار المحدد. أدخلي رقم الطالبة للمتابعة.","ok"); $("lookupForm").classList.remove("hidden");
+      const anySlotAvailable = publicTeachers.some(t=>t.remaining===null || t.remaining===undefined || t.remaining>0);
+      if(!anySlotAvailable){
+        status("publicExamStatus","تم إغلاق التسجيل تلقائيًا لعدم وجود مواعيد متاحة حاليًا. تابعي القوائم التي سترسلها الإدارة لمعرفة موعدك.","bad");
+        $("lookupForm").classList.add("hidden");
+      }else{
+        status("publicExamStatus","التسجيل مفتوح في الاختبار المحدد. أدخلي رقم الطالبة للمتابعة.","ok"); $("lookupForm").classList.remove("hidden");
+      }
     } else {
       if(currentExam.registration_state==="paused"){
         const el=$("publicExamStatus");el.className="status show warn";el.innerHTML="التسجيل متوقف مؤقتًا في الاختبار المحدد.<br>عودي لاختيار الموعد المناسب بعد قليل.";
@@ -847,7 +862,7 @@ async function generateExamLists(){
   const qalunGroups=groups.filter(g=>qids.has(g.teacherId));
   for(const item of unregisteredQalun){
     const eligible=qalunGroups.filter(g=>g.students.length<g.capacity);
-    if(!eligible.length)throw new Error("لا توجد سعة كافية لطالبات قالون غير المسجلات، مع مراعاة سعة المعلمات المختارات.");
+    if(!eligible.length)continue;
     // نختار أول معلمة قالون متاحة حسب ترتيب المواعيد، ولا نخلط ترتيب الطالبات.
     eligible[0].students.push(item.st);
   }
@@ -857,7 +872,7 @@ async function generateExamLists(){
   for(const item of unregisteredNormal){
     const eligible=groups.filter(g=>g.students.length+(extraByTeacher.get(g.teacherId)||0)<g.capacity)
       .sort((a,b)=>(a.students.length+(extraByTeacher.get(a.teacherId)||0))-(b.students.length+(extraByTeacher.get(b.teacherId)||0)));
-    if(!eligible.length)throw new Error("الوقت المتاح لا يكفي لتوزيع جميع الطالبات غير المسجلات. المتبقي: "+(unregisteredNormal.length-[...extraByTeacher.values()].reduce((a,b)=>a+b,0))+" طالبة.");
+    if(!eligible.length)break;
     const target=eligible[0];
     extraByTeacher.set(target.teacherId,(extraByTeacher.get(target.teacherId)||0)+1);
   }
@@ -869,7 +884,8 @@ async function generateExamLists(){
   groups.forEach(g=>{let t=g.start;g.students.forEach(st=>{st.start=t;st.end=t+dur;t+=dur;});});
   generatedExamGroups=groups.filter(g=>g.students.length);renderGeneratedGroups(generatedExamGroups,parsedExamStudents.length,qStudents.length);
   $("listGenerationStatus").className="status ok";
-  $("listGenerationStatus").textContent=registered.length?"تم إنشاء "+generatedExamGroups.length+" قائمة. تم تثبيت "+registered.length+" طالبة مسجلة مع المعلمات اللاتي اخترنها، ثم توزيع غير المسجلات بترتيب القائمة الأصلية حسب السعة المتبقية لكل معلمة.":"لم توجد تسجيلات من القائمة الحالية؛ تم توزيع الطالبات بترتيب القائمة الأصلية، مع تخصيص طالبات قالون للمعلمات المحددات لقالون.";
+  const assignedCount=generatedExamGroups.reduce((n,g)=>n+(g.students||[]).length,0),unassignedCount=Math.max(0,parsedExamStudents.length-assignedCount);
+  $("listGenerationStatus").textContent=(registered.length?"تم إنشاء "+generatedExamGroups.length+" قائمة. تم تثبيت "+registered.length+" طالبة مسجلة مع المعلمات اللاتي اخترنها، ثم توزيع غير المسجلات حسب السعة المتبقية.":"تم إنشاء القوائم وتوزيع الطالبات المتاحات حسب السعة والرواية.")+(unassignedCount?" بقيت "+unassignedCount+" طالبة دون توزيع بسبب عدم كفاية السعة؛ بياناتهن محفوظة، وأعيدي إنشاء القوائم بعد إضافة معلمة.":" تم توزيع جميع الطالبات.");
   if(examId){const groupsToSave=generatedExamGroups.map(g=>({teacherId:g.teacherId,teacherName:g.teacherName,start:g.start,end:g.end,capacity:g.capacity,students:(g.students||[]).map(st=>({name:st.name,student_number:st.student_number,riwayah:st.riwayah,start:st.start,end:st.end}))}));try{await api("admin_save_workspace",{exam_id:examId,students_input:$("studentsInput").value,schedule_input:$("scheduleInput").value,list_duration_minutes:dur,generated_lists:groupsToSave});}catch(err){status("listGenerationStatus","تم إنشاء القوائم، لكن تعذر حفظها تلقائيًا: "+readable(err),"warn");}}
  }catch(e){$("listGenerationStatus").className="status bad";$("listGenerationStatus").textContent=e.message;}
 }
@@ -1230,7 +1246,7 @@ async function saveAllExamWorkspace(publish=false){
   const capacityByTeacher=new Map();
   parsedSchedule.forEach(slot=>{const current=capacityByTeacher.get(slot.teacherId);if(!current)capacityByTeacher.set(slot.teacherId,{start:slot.start,end:slot.end});else{current.start=Math.min(current.start,slot.start);current.end=Math.max(current.end,slot.end);}});
   const totalCapacity=[...capacityByTeacher.values()].reduce((sum,slot)=>sum+Math.max(0,Math.floor((slot.end-slot.start)/capacityDuration)),0);
-  if(totalCapacity<parsedExamStudents.length)throw new Error("وقت المعلمات غير كافٍ لاختبار جميع الطالبات. عدد الطالبات: "+parsedExamStudents.length+"، والسعة المتاحة: "+totalCapacity+". عدّلي المواعيد أو مدة الاختبار ثم حاولي الحفظ مرة أخرى.");
+  if(totalCapacity<parsedExamStudents.length&&!allowUnderCapacitySaveOnce){pendingCapacitySave=publish;$("capacityChoiceMessage").textContent="عدد الطالبات: "+parsedExamStudents.length+" — السعة الحالية: "+totalCapacity+" — المتبقي دون سعة: "+(parsedExamStudents.length-totalCapacity)+" طالبة."; $("capacityChoiceModal").classList.remove("hidden");return;} allowUnderCapacitySaveOnce=false; $("capacityChoiceModal").classList.add("hidden"); pendingCapacitySave=null;
   if(scheduleIssues.length&&!confirm("فيه "+scheduleIssues.length+" سطر في رسالة المواعيد يحتاج مراجعة. سيتم حفظ المواعيد التي تم التعرف عليها فقط. هل تريدين الاستمرار؟"))return;
   const examId=$("editExamId").value,duration=Number(document.querySelector('input[name="listDuration"]:checked')?.value||5)===10?10:5,oldStatus=examId?(exams.find(x=>x.id===examId)?.status||"draft"):"draft";
   saveStage="حفظ بيانات الاختبار";
@@ -1253,9 +1269,11 @@ async function saveAllExamWorkspace(publish=false){
   const finalExam=publish?(await api("admin_save_exam",{exam_id:id,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:"published",registration_state:$("registrationState").value,instructions:$("examInstructions").value})).exam:saved.exam;
   exams=[finalExam,...exams.filter(x=>x.id!==id)];$("examSelect").innerHTML=exams.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+' · '+safe(x.status)+'</option>').join("")||'<option value="">لا توجد اختبارات</option>';$("examSelect").value=id;savedQalunTeacherIds=qids;fillExamForm(finalExam);workspaceLoadedExamId="";
   saveStage="تحديث لوحة الإدارة والاختبار المتاح للطالبات";
-  selectedPublicExamId=id;await Promise.all([loadDashboard(),renderTeachers(),loadPublicExam(id)]);
+  selectedPublicExamId=id;
   status("saveAllWorkspaceStatus",publish?"تم حفظ البيانات ونشر الاختبار. قائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون محفوظة. حالة التسجيل: "+({"open":"مفتوح","closed":"مغلق","paused":"متوقف مؤقتًا"}[finalExam.registration_state]||finalExam.registration_state)+".":"تم حفظ بيانات الاختبار وقائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون دون نشر اختبار جديد. يمكنك إنشاء القوائم الآن أو نشر الاختبار لاحقًا.","ok");
   status("adminStatus",publish?"تم حفظ إعدادات الاختبار ونشره.":"تم حفظ إعدادات الاختبار دون نشره.","ok");
+  // لا نؤخر رسالة نجاح الحفظ بانتظار تحديث الإحصائيات والواجهة العامة؛ تُحدّث في الخلفية بعد نجاح الكتابة.
+  Promise.allSettled([loadDashboard(),renderTeachers(),loadPublicExam(id)]).then(results=>{if(results.some(x=>x.status==="rejected"))status("adminStatus","تم الحفظ بنجاح، لكن تعذر تحديث بعض بيانات العرض. استخدمي زر تحديث الإحصائيات أو أعيدي تحميل الصفحة.","warn");});
    if(!publish&&adminViewMode==="new")showAdminView("saved");
  }catch(e){
   const errorKey=typeof e==="string"?e:(e?.message||"UNKNOWN_ERROR");
@@ -1266,6 +1284,10 @@ async function saveAllExamWorkspace(publish=false){
 }
 $("saveAllWorkspaceBtn").addEventListener("click",()=>saveAllExamWorkspace(false));
 $("publishExamBtn").addEventListener("click",()=>saveAllExamWorkspace(true));
+function closeCapacityChoice(){ $("capacityChoiceModal").classList.add("hidden"); pendingCapacitySave=null; }
+$("closeCapacityChoice").addEventListener("click",closeCapacityChoice);
+$("addTeacherNowBtn").addEventListener("click",()=>{const publish=pendingCapacitySave;closeCapacityChoice();status("saveAllWorkspaceStatus","لم يتم حفظ الاختبار بعد. أضيفي المعلمة ومواعيدها، ثم اضغطي «"+(publish?"نشر الاختبار":"حفظ بيانات الاختبار")+"» مرة أخرى.","warn");});
+$("addTeacherLaterBtn").addEventListener("click",async()=>{const publish=pendingCapacitySave;closeCapacityChoice();allowUnderCapacitySaveOnce=true;await saveAllExamWorkspace(!!publish);});
 
 async function loadAdminPublicRefresh(){await loadPublicExam();}
 try{await supabase.auth.signOut({scope:"local"});}catch(e){}
