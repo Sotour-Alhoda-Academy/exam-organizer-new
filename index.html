@@ -465,6 +465,8 @@ async function showStudentRegistration(student,num){
        return {...t,remaining};
      });
      student.alreadyRegistered=true;student.currentTeacherId=targetId;
+     // يحدّث الخادم حالة التسجيل تلقائيًا إذا استُهلك آخر مقعد، حتى لا تظهر معلمة مضافة لاحقًا للطالبات.
+     api("public_exam",{exam_id:currentExam.id},false).then(data=>{if(data?.exam)currentExam=data.exam;}).catch(()=>{});
      status("registerStatus",wasRegistered?"تم تغيير موعدك بنجاح.":"تم تسجيل اختيارك بنجاح. احتفظي بهذه المعلومة وتابعي أي تعليمات من الإدارة.","ok");
      $("registerBtn").textContent="تم حفظ الاختيار";
    }catch(err){status("registerStatus",readable(err),"bad");$("registerBtn").disabled=false;}
@@ -842,7 +844,7 @@ async function generateExamLists(){
   if(!groups.length)throw new Error("لا توجد سعة صالحة في المواعيد.");
   const qids=new Set(selectedExamQalun()),qStudents=parsedExamStudents.filter(x=>x.riwayah==="قالون");
   if(qStudents.length&&!qids.size)throw new Error("توجد طالبات قالون؛ اختاري معلمة واحدة على الأقل في قسم معلمات قالون.");
-  if(qStudents.length&&!groups.some(g=>qids.has(g.teacherId)))throw new Error("لا توجد سعة زمنية كافية لدى معلمات قالون المختارات. راجعي مدة الطالبة أو مواعيدهن.");
+  // إذا لم تتوفر سعة حالية لمعلمات قالون، اتركي الطالبات دون توزيع بدل إيقاف إنشاء القوائم؛ يمكن استكمالهن بعد إضافة معلمة.
   const byTeacher=new Map(groups.map(g=>[g.teacherId,g])),used=new Set(),queues=new Map(),registered=[];
   parsedExamStudents.forEach((st,i)=>{const k=String(st.student_number)+"|"+examNorm(st.name);if(!queues.has(k))queues.set(k,[]);queues.get(k).push({st,i});});
   for(const reg of regs){
