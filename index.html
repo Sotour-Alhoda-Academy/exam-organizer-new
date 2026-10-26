@@ -424,7 +424,7 @@ async function loadPublicExam(requestedExamId=selectedPublicExamId) {
       if(currentExam.registration_state==="paused"){
         const el=$("publicExamStatus");el.className="status show warn";el.innerHTML="التسجيل متوقف مؤقتًا في الاختبار المحدد.<br>عودي لاختيار الموعد المناسب بعد قليل.";
       }else{
-        const el=$("publicExamStatus");el.className="status show bad";el.innerHTML="تم إغلاق التسجيل في هذا الاختبار.<br>من لم تُسجل سيتم توزيع اسمها عشوائيًا على قوائم المعلمات المتبقيات.";
+        const el=$("publicExamStatus");el.className="status show bad";el.innerHTML="تم إغلاق التسجيل في هذا الاختبار.<br>تابعي القوائم التي سترسلها الإدارة لمعرفة موعدك.";
       }
       $("lookupForm").classList.add("hidden");
     }
