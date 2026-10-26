@@ -123,7 +123,22 @@ Deno.serve(async (req: Request) => {
           durationMinutes: duration,
         };
       });
-      return json({ exam, teachers });
+      // Close registration persistently when every configured teacher has run out of capacity.
+      // This prevents a teacher added later from unexpectedly appearing to students after closure.
+      let responseExam = exam;
+      const hasRemainingCapacity = teachers.some((teacher: any) =>
+        teacher.remaining === null || teacher.remaining === undefined || teacher.remaining > 0
+      );
+      if (exam.registration_state === "open" && !hasRemainingCapacity) {
+        const { data: closedExam, error: closeError } = await db.from("exams")
+          .update({ registration_state: "closed", updated_at: new Date().toISOString() })
+          .eq("id", exam.id).eq("registration_state", "open")
+          .select("id,title,exam_date,status,registration_state,default_duration_minutes,instructions")
+          .maybeSingle();
+        if (closeError) throw closeError;
+        if (closedExam) responseExam = closedExam;
+      }
+      return json({ exam: responseExam, teachers });
     }
 
     if (action === "lookup_student") {
