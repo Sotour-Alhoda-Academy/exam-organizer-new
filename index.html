@@ -466,7 +466,7 @@ async function showStudentRegistration(student,num){
      });
      student.alreadyRegistered=true;student.currentTeacherId=targetId;
      // يحدّث الخادم حالة التسجيل تلقائيًا إذا استُهلك آخر مقعد، حتى لا تظهر معلمة مضافة لاحقًا للطالبات.
-     api("public_exam",{exam_id:currentExam.id},false).then(data=>{if(data?.exam)currentExam=data.exam;}).catch(()=>{});
+     api("public_exam",{exam_id:currentExam.id},false).then(data=>{if(data?.exam)currentExam=data.exam;if(data?.exam?.registration_state==="closed"){status("publicExamStatus","تم إغلاق التسجيل لعدم وجود مواعيد متاحة حاليًا. تابعي القوائم التي سترسلها الإدارة لمعرفة موعدك.","bad");$("lookupForm").classList.add("hidden");}}).catch(()=>{});
      status("registerStatus",wasRegistered?"تم تغيير موعدك بنجاح.":"تم تسجيل اختيارك بنجاح. احتفظي بهذه المعلومة وتابعي أي تعليمات من الإدارة.","ok");
      $("registerBtn").textContent="تم حفظ الاختيار";
    }catch(err){status("registerStatus",readable(err),"bad");$("registerBtn").disabled=false;}
