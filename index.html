@@ -132,22 +132,9 @@ button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);colo
 <p class="hint">استخدمي حساب الإدارة المعتمد. الحساب لازم يكون مضافًا ضمن صلاحيات الإدارة في قاعدة البيانات.</p>
 <form id="loginForm">
 <label for="adminPassword">كلمة مرور الإدارة</label><input id="adminPassword" type="password" autocomplete="current-password" required>
-<div class="actions"><button class="primary" type="submit">تسجيل الدخول</button><button class="soft" type="button" id="showRecoveryForm">نسيت كلمة المرور؟</button></div>
+<div class="actions"><button class="primary" type="submit">تسجيل الدخول</button></div>
 </form>
 <div id="loginStatus" class="status"></div>
-<form id="recoveryEmailForm" class="hidden">
-<h3>استعادة كلمة المرور</h3>
-<p class="hint">اكتبي بريد الإدارة، وسنرسل لكِ رابطًا لتعيين كلمة مرور جديدة.</p>
-<label for="recoveryEmail">البريد الإلكتروني</label><input id="recoveryEmail" type="email" autocomplete="email" required>
-<div class="actions"><button class="primary" type="submit">إرسال رابط الاستعادة</button><button class="gray" type="button" id="cancelRecoveryEmail">رجوع</button></div>
-</form>
-<form id="newPasswordForm" class="hidden">
-<h3>تعيين كلمة مرور جديدة</h3>
-<label for="newAdminPassword">كلمة المرور الجديدة</label><input id="newAdminPassword" type="password" autocomplete="new-password" minlength="8" required>
-<label for="confirmAdminPassword">تأكيد كلمة المرور</label><input id="confirmAdminPassword" type="password" autocomplete="new-password" minlength="8" required>
-<div class="actions"><button class="primary" type="submit">حفظ كلمة المرور الجديدة</button></div>
-</form>
-<div id="recoveryStatus" class="status"></div>
 </div>
 
 <div id="adminWorkspace" class="hidden">
@@ -307,7 +294,6 @@ const $ = (id) => document.getElementById(id);
 let currentExam = null, foundStudent = null, publicTeachers = [], publicExams = [], selectedPublicExamId = "", exams = [], teachers = [], dashboard = null;
 let publicExamLoadSeq = 0, adminDashboardLoadSeq = 0;
 let accessToken = null;
-let recoveryMode = window.location.hash.includes("type=recovery") || new URLSearchParams(window.location.search).get("type")==="recovery";
 let pendingCapacitySave = null, allowUnderCapacitySaveOnce = false;
 let loadedScheduleSnapshot = "";
 const activeStatuses = ["registered","confirmed","needs_review"];
@@ -544,15 +530,6 @@ function clearWorkspaceForNewExam(){
 async function refreshSession() {
   const {data}=await supabase.auth.getSession();
   accessToken=data.session?.access_token||null;
-  if(recoveryMode){
-    $("loginCard").classList.remove("hidden");
-    $("loginForm").classList.add("hidden");
-    $("recoveryEmailForm").classList.add("hidden");
-    $("newPasswordForm").classList.remove("hidden");
-    $("adminWorkspace").classList.add("hidden");
-    $("teacherQuickActions").classList.add("hidden");
-    return;
-  }
   $("loginCard").classList.toggle("hidden",!!accessToken);
   $("adminWorkspace").classList.toggle("hidden",!accessToken);
   $("teacherQuickActions").classList.toggle("hidden",!accessToken);
@@ -569,58 +546,6 @@ $("loginForm").addEventListener("submit",async e=>{
   if(accessToken) status("adminStatus","تم تسجيل الدخول. لو ظهرت رسالة رفض صلاحيات، فالحساب يحتاج إضافته إلى قائمة الإدارة.","ok");
 });
 
-$("showRecoveryForm").addEventListener("click",()=>{
-  $("loginForm").classList.add("hidden");
-  $("recoveryEmailForm").classList.remove("hidden");
-  $("recoveryEmail").value=ADMIN_EMAIL;
-  clearStatus("loginStatus"); clearStatus("recoveryStatus");
-});
-$("cancelRecoveryEmail").addEventListener("click",()=>{
-  $("recoveryEmailForm").classList.add("hidden");
-  $("loginForm").classList.remove("hidden");
-  clearStatus("recoveryStatus");
-});
-$("recoveryEmailForm").addEventListener("submit",async e=>{
-  e.preventDefault();
-  status("recoveryStatus","جارٍ إرسال رابط الاستعادة...","info");
-  const email=$("recoveryEmail").value.trim();
-  const redirectTo=window.location.origin+window.location.pathname;
-  const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo});
-  if(error){status("recoveryStatus","تعذّر إرسال الرابط: "+readable(error),"bad");return;}
-  status("recoveryStatus","لو كان البريد مسجلًا، هتوصلك رسالة استعادة. افتحي الرابط من نفس الموقع لتعيين كلمة المرور الجديدة.","ok");
-});
-supabase.auth.onAuthStateChange((event)=>{
-  if(event==="PASSWORD_RECOVERY"){
-    recoveryMode=true;
-    $("loginCard").classList.remove("hidden");
-    $("loginForm").classList.add("hidden");
-    $("recoveryEmailForm").classList.add("hidden");
-    $("newPasswordForm").classList.remove("hidden");
-    $("adminWorkspace").classList.add("hidden");
-    $("teacherQuickActions").classList.add("hidden");
-    status("recoveryStatus","اكتبي كلمة المرور الجديدة ثم احفظيها.","info");
-  }
-});
-$("newPasswordForm").addEventListener("submit",async e=>{
-  e.preventDefault();
-  const password=$("newAdminPassword").value;
-  if(password!==$("confirmAdminPassword").value){
-    status("recoveryStatus","كلمتا المرور غير متطابقتين.","bad");return;
-  }
-  status("recoveryStatus","جارٍ حفظ كلمة المرور الجديدة...","info");
-  const {error}=await supabase.auth.updateUser({password});
-  if(error){status("recoveryStatus","تعذّر تغيير كلمة المرور: "+readable(error),"bad");return;}
-  recoveryMode=false;
-  try{await supabase.auth.signOut({scope:"local"});}catch(_){}
-  history.replaceState(null,"",window.location.pathname);
-  $("newAdminPassword").value="";$("confirmAdminPassword").value="";
-  $("newPasswordForm").classList.add("hidden");
-  $("loginForm").classList.remove("hidden");
-  $("recoveryEmailForm").classList.add("hidden");
-  status("loginStatus","تم تغيير كلمة المرور بنجاح. سجّلي الدخول بكلمة المرور الجديدة.","ok");
-  status("recoveryStatus","","info");
-  await refreshSession();
-});
 
 $("openNewExamView").addEventListener("click",()=>{showAdminView("new");clearWorkspaceForNewExam();});
 $("openSavedExamView").addEventListener("click",async()=>{$("examSelect").value="";workspaceLoadedExamId="";savedQalunTeacherIds=new Set();generatedExamGroups=[];showAdminView("saved");await loadAdmin();showAdminView($("examSelect").value?"saved-details":"saved");});
@@ -1374,17 +1299,11 @@ $("addTeacherNowBtn").addEventListener("click",()=>{const publish=pendingCapacit
 $("addTeacherLaterBtn").addEventListener("click",async()=>{const publish=pendingCapacitySave;closeCapacityChoice();allowUnderCapacitySaveOnce=true;await saveAllExamWorkspace(!!publish);});
 
 async function loadAdminPublicRefresh(){await loadPublicExam();}
-if(!recoveryMode){try{await supabase.auth.signOut({scope:"local"});}catch(e){}}
+try{await supabase.auth.signOut({scope:"local"});}catch(e){}
 accessToken=null;
 $("loginCard").classList.remove("hidden");
 $("adminWorkspace").classList.add("hidden");
 $("teacherQuickActions").classList.add("hidden");
-if(recoveryMode){
-  $("loginForm").classList.add("hidden");
-  $("recoveryEmailForm").classList.add("hidden");
-  $("newPasswordForm").classList.remove("hidden");
-  status("recoveryStatus","اكتبي كلمة المرور الجديدة ثم احفظيها.","info");
-}
 await loadPublicExam();
 </script>
 </body>
