@@ -307,7 +307,7 @@ const $ = (id) => document.getElementById(id);
 let currentExam = null, foundStudent = null, publicTeachers = [], publicExams = [], selectedPublicExamId = "", exams = [], teachers = [], dashboard = null;
 let publicExamLoadSeq = 0, adminDashboardLoadSeq = 0;
 let accessToken = null;
-let recoveryMode = false;
+let recoveryMode = window.location.hash.includes("type=recovery") || new URLSearchParams(window.location.search).get("type")==="recovery";
 let pendingCapacitySave = null, allowUnderCapacitySaveOnce = false;
 let loadedScheduleSnapshot = "";
 const activeStatuses = ["registered","confirmed","needs_review"];
@@ -1374,11 +1374,17 @@ $("addTeacherNowBtn").addEventListener("click",()=>{const publish=pendingCapacit
 $("addTeacherLaterBtn").addEventListener("click",async()=>{const publish=pendingCapacitySave;closeCapacityChoice();allowUnderCapacitySaveOnce=true;await saveAllExamWorkspace(!!publish);});
 
 async function loadAdminPublicRefresh(){await loadPublicExam();}
-try{await supabase.auth.signOut({scope:"local"});}catch(e){}
+if(!recoveryMode){try{await supabase.auth.signOut({scope:"local"});}catch(e){}}
 accessToken=null;
 $("loginCard").classList.remove("hidden");
 $("adminWorkspace").classList.add("hidden");
 $("teacherQuickActions").classList.add("hidden");
+if(recoveryMode){
+  $("loginForm").classList.add("hidden");
+  $("recoveryEmailForm").classList.add("hidden");
+  $("newPasswordForm").classList.remove("hidden");
+  status("recoveryStatus","اكتبي كلمة المرور الجديدة ثم احفظيها.","info");
+}
 await loadPublicExam();
 </script>
 </body>
