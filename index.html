@@ -750,7 +750,7 @@ async function renderTeachers() {
 /* Old-organizer style list parsing and allocation; isolated from registration records. */
 let parsedExamStudents=[], previousExamInputs=null, generatedExamGroups=[];
 function examNorm(v){return String(v||"").normalize("NFKC").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/[ًٌٍَُِّْـ]/g,"").replace(/\s+/g," ").trim().toLowerCase();}
-function examCleanName(v){const name=String(v||"").replace(/(قالون|قولون|حفص|ورش|qalun)/gi," ").replace(/[^\p{L}\p{M}\s'-]/gu," ").replace(/\s+/g," ").trim();return /\p{L}/u.test(name)?name:"";}
+function examCleanName(v){const name=String(v||"").replace(/(^|[^\p{L}\p{M}])(?:قالون|قولون|حفص|ورش|qalun)(?=$|[^\p{L}\p{M}])/giu,"$1 ").replace(/[^\p{L}\p{M}\s'-]/gu," ").replace(/\s+/g," ").trim();return /\p{L}/u.test(name)?name:"";}
 function examSplitLine(raw){
  let line=String(raw||"").trim();if(!line)return[];
  const explicit=line.match(/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[（(]?\s*([0-9٠-٩]+)\s*[)）\]】.]?\s*\|\s*(.+)$/u);
