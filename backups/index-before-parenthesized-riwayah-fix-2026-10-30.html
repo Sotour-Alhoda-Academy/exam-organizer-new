@@ -1,0 +1,1312 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#71358b">
+<title>منظّم اختبارات الأكاديمية</title>
+<style>
+:root{--p:#71358b;--p2:#9b59b6;--ink:#28232c;--muted:#766d7c;--line:#e9e1ed;--bg:#f8f5fa;--good:#16794a;--warn:#8a5b00;--bad:#b42335}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.6}
+header{background:linear-gradient(135deg,#5f2877,#9b59b6);color:#fff;padding:23px 15px;text-align:center}
+header h1{font-size:clamp(22px,4vw,30px);margin:0 0 5px}header p{margin:0;opacity:.9;font-size:14px}
+.wrap{max-width:1100px;margin:auto;padding:16px}
+.tabs{display:flex;gap:8px;margin:0 0 15px;flex-wrap:wrap}.tab{background:#eee5f2;color:var(--p);flex:1;min-width:140px}.tab.active{background:var(--p);color:white}
+.panel{display:none}.panel.active{display:block}
+.card{background:white;border:1px solid var(--line);border-radius:16px;padding:17px;margin-bottom:14px;box-shadow:0 4px 14px #2d153608}
+h2{font-size:19px;color:var(--p);margin:0 0 12px}h3{font-size:16px;margin:0 0 8px}
+p{margin:6px 0}.muted,.hint{font-size:12px;color:var(--muted)}.hint{line-height:1.8}
+label{display:block;font-size:13px;font-weight:bold;margin:8px 0 5px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #dcd2e2;border-radius:10px;font:inherit;background:#fff;color:var(--ink);min-width:0}
+input:focus,select:focus,textarea:focus{outline:2px solid #d9bce6;border-color:var(--p)}
+textarea{min-height:100px;resize:vertical}
+button{border:0;border-radius:10px;padding:11px 14px;font:inherit;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--p);color:white}.soft{background:#eee8f2;color:var(--p)}.green{background:#218653;color:white}.red{background:#b42335;color:white}.gray{background:#f0edf1;color:#514957}
+#qalunSaveStatus{display:none;margin:0;padding:7px 10px;font-size:12px;line-height:1.5;max-width:100%}#qalunSaveStatus.show{display:inline-block}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.actions button{flex:0 0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px}
+.status{display:none;margin-top:12px;border-radius:10px;padding:10px 12px;font-size:13px;white-space:pre-wrap}.status.show{display:block}.status.ok{background:#e7f7ed;color:#17643c}.status.warn{background:#fff4d8;color:#815500}.status.bad{background:#fdebed;color:#9f1d2c}.status.info{background:#f0e8f5;color:#5d2676}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin:12px 0}.stat{background:#f8f2fb;border-radius:12px;text-align:center;padding:12px}.stat b{display:block;color:var(--p);font-size:23px}
+.dashboard-stats-row{display:flex;align-items:flex-start;gap:8px}.dashboard-stats-row #dashboardStats{flex:1;min-width:0}.dashboard-refresh-button{flex:0 0 40px;width:40px;height:40px;padding:0;margin-top:12px;font-size:24px;line-height:1;border-radius:12px}
+.teacher{border:1px solid var(--line);border-radius:13px;padding:12px;background:#fff}.teacher-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.teacher-name{font-weight:bold;color:var(--p)}.tag{display:inline-block;background:#eee8f2;color:var(--p);border-radius:20px;padding:3px 8px;font-size:11px;margin:3px 2px}.tag.good{background:#e6f6ed;color:#16794a}.tag.warn{background:#fff1cd;color:#8a5b00}
+.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px;min-width:520px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}th{background:#faf6fc;color:var(--p)}
+.issue{border:1px solid #eadbb0;background:#fffaf0;border-radius:12px;padding:12px;margin-top:8px}.issue small{color:var(--muted)}
+.hidden{display:none!important}.divider{border:0;border-top:1px solid var(--line);margin:16px 0}
+.teacher-quick-actions{position:static;display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.teacher-quick-btn{min-height:40px;min-width:44px;padding:8px 12px;display:flex;align-items:center;justify-content:center;border-radius:10px;color:#fff;font-size:14px;line-height:1.3;box-shadow:0 2px 8px #0002}
+.teacher-quick-manage{background:#5f2877}.teacher-quick-add{background:#218653}
+.teacher-manager-modal{position:fixed;inset:0;z-index:5000;background:#0008;display:flex;align-items:center;justify-content:center;padding:14px}
+.teacher-manager-box{width:min(540px,100%);max-height:86vh;overflow:auto;background:#fff;border-radius:16px;padding:16px;box-shadow:0 14px 40px #0003}
+.teacher-manager-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.teacher-manager-head h3{margin:0;color:var(--p)}
+.teacher-manager-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--line);border-radius:11px;margin-top:8px}
+.teacher-manager-row .teacher-manager-name{font-weight:bold;color:var(--p);min-width:0;overflow-wrap:anywhere}
+.teacher-manager-actions{display:flex;gap:6px;flex-shrink:0}
+.teacher-mini-btn{width:36px;height:36px;min-width:36px;padding:0;border-radius:9px;display:flex;align-items:center;justify-content:center}
+.teacher-mini-edit{background:#eee8f2;color:var(--p)}.teacher-mini-delete{background:#fdebed;color:#b42335}
+@media(max-width:560px){.teacher-quick-btn{min-height:40px;min-width:42px}.teacher-manager-row{align-items:flex-start}.teacher-manager-actions{gap:4px}} 
+.schedule-preview-table{width:100%;border-collapse:collapse;min-width:360px}.schedule-preview-table th,.schedule-preview-table td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}.schedule-preview-table th{background:#f5f0f8;color:var(--p);font-weight:700}.schedule-issue{border:1px solid #f0c36d;background:#fff9e9;padding:10px;border-radius:10px;margin:8px 0}
+.teacher-quick-actions{position:static;display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}.teacher-quick-btn{min-height:40px;min-width:44px;padding:8px 12px;display:flex;align-items:center;justify-content:center;border-radius:10px;color:#fff;font-size:14px;line-height:1.3;box-shadow:0 2px 8px #0002}.teacher-quick-manage{background:#5f2877}.teacher-quick-add{background:#218653}
+.teacher-manager-modal{position:fixed;inset:0;z-index:5000;background:#0008;display:flex;align-items:center;justify-content:center;padding:14px}.teacher-manager-box{width:min(540px,100%);max-height:86vh;overflow:auto;background:#fff;border-radius:16px;padding:16px;box-shadow:0 14px 40px #0003}.teacher-manager-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.teacher-manager-head h3{margin:0;color:var(--p)}.teacher-manager-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid var(--line);border-radius:11px;margin-top:8px}.teacher-manager-name{font-weight:bold;color:var(--p);min-width:0;overflow-wrap:anywhere}.teacher-manager-actions{display:flex;gap:6px;flex-shrink:0}.teacher-mini-btn{width:36px;height:36px;min-width:36px;padding:0;border-radius:9px;display:flex;align-items:center;justify-content:center}.teacher-mini-edit{background:#eee8f2;color:var(--p)}.teacher-mini-delete{background:#fdebed;color:#b42335}@media(max-width:560px){.teacher-quick-btn{min-height:40px;min-width:42px}.teacher-manager-row{align-items:flex-start}}footer{text-align:center;color:var(--muted);font-size:11px;padding:8px 0 22px}
+@media(max-width:560px){.wrap{padding:10px}.card{padding:13px}.actions button{flex:1}.tabs .tab{min-width:0}.teacher-head{align-items:flex-start}}
+
+.optional-roster summary{cursor:pointer;font-weight:700;color:#71358b;padding:4px}.optional-roster .roster-inner{padding-top:12px}.duration-picker{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#faf7fb;border:1px solid #e5dbea;border-radius:12px;padding:12px;margin:12px 0}
+.duration-picker label{display:flex;align-items:center;gap:6px;cursor:pointer;margin:0}
+.duration-picker input{width:auto;margin:0}
+.exam-details-toggle{background:#71358b;color:#fff;min-height:42px;padding:9px 18px;border-radius:8px;white-space:nowrap}
+.save-all-inline{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.save-all-inline button{align-self:flex-start;min-height:44px;padding:10px 18px;border-radius:8px}
+@media(max-width:560px){.save-all-inline button{width:100%}.exam-details-toggle{padding:8px 12px}}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+.check{display:flex;align-items:center;gap:8px;border:1px solid var(--border,#e5dbea);border-radius:10px;padding:10px;background:#fff}
+.check input{width:auto;margin:0}
+.generated-list{border:1px solid #e5dbea;border-radius:12px;padding:14px;margin:12px 0;background:#fff}
+.generated-list h3{margin:0 0 8px;color:#71358b}
+.generated-list pre{white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;line-height:1.8;background:#faf7fb;padding:12px;border-radius:10px}
+
+
+.student-issue-dock{position:fixed;bottom:14px;left:0;right:0;z-index:50;display:flex;justify-content:center;pointer-events:none;padding:0 14px}
+.issue-fab{pointer-events:auto;display:flex;align-items:center;gap:9px;border:1px solid #d9c2e5;border-radius:999px;padding:10px 17px;background:#fff;color:#71358b;box-shadow:0 5px 20px #31134124;font:inherit;font-weight:700;cursor:pointer}
+.issue-fab-icon{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:50%;background:#71358b;color:#fff;font-weight:800}
+#studentIssueCard{position:fixed;z-index:49;left:14px;right:14px;bottom:72px;margin:0 auto;width:min(540px,calc(100% - 28px));max-height:calc(100dvh - 100px);overflow:auto;box-shadow:0 10px 35px #20102930}
+#studentIssueCard h2{margin-top:0}
+@media(min-width:700px){#studentIssueCard{left:24px;right:auto;bottom:76px;width:460px}}
+
+ .admin-home-menu{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 16px}
+.admin-home-option{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:150px;padding:18px 12px;background:#fff;border:1px solid var(--line);border-radius:16px;color:var(--ink);box-shadow:0 5px 18px #3b20400a}
+.admin-home-option:hover{border-color:var(--p2);transform:translateY(-1px)}
+.admin-home-option strong{font-size:1.08rem}.admin-home-option small{color:var(--muted);font-size:.84rem;text-align:center;font-weight:400}
+.admin-home-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#f2e8f7;color:var(--p);font-size:1.5rem}
+.section-action-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.section-action-head h2{margin:0}
+@media(max-width:650px){.admin-home-menu{grid-template-columns:1fr}.admin-home-option{min-height:100px;display:grid;grid-template-columns:52px 1fr;justify-items:start;text-align:right}.admin-home-option small{grid-column:2}.admin-home-icon{grid-row:1/3}}
+</style>
+</head>
+<body>
+<header>
+<h1>🌷 منظّم اختبارات الأكاديمية 🌷</h1>
+<p>تسجيل الطالبات وإدارة الاختبارات ومواعيد المعلمات</p>
+</header>
+<main class="wrap">
+<div class="tabs">
+<button class="tab active" data-tab="studentPanel">👩‍🎓 تسجيل الطالبة</button>
+<button class="tab" data-tab="adminPanel">🔐 لوحة الإدارة</button>
+</div>
+
+<section id="studentPanel" class="panel active">
+<div class="card">
+<h2>تسجيل الطالبة</h2>
+<p class="hint">أدخلي رقم الطالبة كما هو مسجّل لدى الإدارة، ثم راجعي الاسم والرواية قبل اختيار المعلمة.</p>
+<div id="publicExamStatus" class="status show info">جارٍ التحقق من الاختبار المتاح...</div>
+<div id="publicExamRetry" class="actions hidden"><button type="button" id="retryPublicExam" class="soft">🔄 إعادة تحميل الاختبارات</button></div>
+<div id="publicExamPickerWrap" class="hidden"><label for="publicExamPicker">اختاري الاختبار</label><select id="publicExamPicker"></select></div>
+<div id="publicExamInfo" class="hidden"></div>
+<form id="lookupForm">
+<label for="studentNumber">رقمك في القائمة</label>
+<p class="hint">(الرقم المكتوب بجوار اسمك في قائمة الطالبات، والذي ترسلين به التمام في المجموعة)</p>
+<input id="studentNumber" inputmode="numeric" autocomplete="off" maxlength="80" required placeholder="اكتبي رقمك في القائمة هنا">
+<div class="actions"><button class="primary" type="submit">التحقق من البيانات</button></div>
+</form>
+<div id="studentResult"></div>
+</div>
+<div class="student-issue-dock">
+<button type="button" id="toggleIssueForm" class="issue-fab" aria-expanded="false" aria-controls="studentIssueCard" title="الإبلاغ عن مشكلة"><span class="issue-fab-icon">!</span><span>الإبلاغ عن مشكلة</span></button>
+</div>
+<div class="card hidden" id="studentIssueCard">
+<h2>الإبلاغ عن مشكلة</h2>
+<p class="hint">لو واجهتك مشكلة في البحث أو التسجيل، اكتبي رقمك ووضّحي المشكلة.</p>
+<form id="issueForm">
+<label for="issueStudentNumber">رقم الطالبة</label><input id="issueStudentNumber" maxlength="80" inputmode="numeric" placeholder="اكتبي رقمك">
+<label for="issueName">الاسم (اختياري)</label><input id="issueName" maxlength="120">
+<label for="issueCategory">نوع المشكلة</label>
+<select id="issueCategory"><option value="lookup">البحث عن الطالبة</option><option value="registration">إتمام التسجيل</option><option value="teacher_choice">اختيار المعلمة</option><option value="schedule">المواعيد</option><option value="other">أخرى</option></select>
+<label for="issueMessage">تفاصيل المشكلة</label><textarea id="issueMessage" maxlength="1000" required placeholder="اكتبي المشكلة باختصار..."></textarea>
+<div class="actions"><button class="soft" type="submit">إرسال البلاغ</button><button class="gray" type="button" id="closeIssueForm">إغلاق</button></div>
+</form>
+<div id="issueStatus" class="status"></div>
+</div>
+</section>
+
+<section id="adminPanel" class="panel">
+<div id="loginCard" class="card">
+<h2>دخول الإدارة</h2>
+<p class="hint">استخدمي حساب الإدارة المعتمد. الحساب لازم يكون مضافًا ضمن صلاحيات الإدارة في قاعدة البيانات.</p>
+<form id="loginForm">
+<label for="adminPassword">كلمة مرور الإدارة</label><input id="adminPassword" type="password" autocomplete="current-password" required>
+<div class="actions"><button class="primary" type="submit">تسجيل الدخول</button></div>
+</form>
+<div id="loginStatus" class="status"></div>
+</div>
+
+<div id="adminWorkspace" class="hidden">
+<div id="adminHomeMenu" class="admin-home-menu">
+  <button type="button" class="admin-home-option" id="openNewExamView"><span class="admin-home-icon">＋</span><strong>اختبار جديد</strong><small>إعداد اختبار وقائمة الطالبات والمواعيد</small></button>
+  <button type="button" class="admin-home-option" id="openSavedExamView"><span class="admin-home-icon">📋</span><strong>اختبار مسجل</strong><small>عرض الاختبارات المحفوظة وتعديل بياناتها</small></button>
+  <button type="button" class="admin-home-option" id="openTeachersView"><span class="admin-home-icon">👩‍🏫</span><strong>إدارة المعلمات</strong><small>إضافة معلمة أو تعديل بياناتها وحذفها</small></button>
+</div>
+<div id="examPickerArea" class="card hidden">
+<div class="section-action-head"><h2>📋 الاختبارات المسجلة</h2><button type="button" class="soft" id="backFromSavedPicker">↩️ القائمة الرئيسية</button></div>
+<label for="examSelect">اختاري الاختبار المحفوظ</label>
+<select id="examSelect"><option value="">لا توجد اختبارات محفوظة</option></select>
+
+</div>
+<div id="examAdminHeader" class="card hidden">
+<div class="teacher-head"><button id="backToAdminMenu" class="gray" type="button">↩️ القائمة الرئيسية</button><button id="toggleExamForm" class="exam-details-toggle" type="button" aria-expanded="true" aria-controls="examFormPanel">بيانات الاختبار</button></div>
+<div id="examFormPanel">
+<form id="examForm">
+<input id="editExamId" type="hidden">
+<label for="examTitle">اسم الاختبار</label><input id="examTitle" maxlength="200" required placeholder="مثال: اختبار سورة النور">
+<div class="two">
+<div><label for="examDate">تاريخ الاختبار</label><input id="examDate" type="date"></div>
+<div><input id="examDuration" type="hidden" value="5"></div>
+</div>
+<div class="two">
+
+<div><label for="registrationState">التسجيل</label><select id="registrationState"><option value="closed">مغلق</option><option value="paused">متوقف مؤقتًا</option><option value="open">مفتوح</option></select></div>
+</div>
+<input id="examInstructions" type="hidden" value="">
+<p class="hint">املئي البيانات هنا، ثم احفظي بيانات الاختبار وقائمة الطالبات والمواعيد معًا من زر الحفظ الموجود أسفل الصفحة.</p>
+</form>
+<div id="examFormStatus" class="status"></div>
+</div>
+<div id="adminStatus" class="status"></div>
+<div class="dashboard-stats-row"><div id="dashboardStats" class="stats"></div><button type="button" id="refreshDashboardStats" class="soft dashboard-refresh-button" title="تحديث الإحصائيات" aria-label="تحديث الإحصائيات">↻</button></div>
+</div>
+
+
+<div class="card exam-workspace-section" id="guide-students">
+<h2>👩‍🎓 1) قائمة الطالبات</h2>
+<p class="hint">الصقي قائمة الطالبات المرقمة، ثم راجعي الأسماء والروايات قبل إنشاء القوائم.</p>
+<textarea id="studentsInput" rows="7" placeholder="1001 | أميرة محمد | حفص&#10;1002 | نادين غزي | حفص&#10;1003 | روان السيد | قالون"></textarea>
+<div class="actions">
+<button type="button" id="parseStudentsBtn" class="primary">🔍 فصل الطالبات</button>
+<button type="button" id="clearStudentsBtn" class="gray">🗑️ مسح</button>
+<button type="button" id="undoInputsBtn" class="gray">↩️ تراجع</button>
+</div>
+<div id="studentsStatus" class="status"></div><div id="studentsStats" class="stats"></div><div id="studentIssues"></div><div class="actions"><button type="button" id="toggleStudentNames" class="soft" aria-expanded="false">👁️ إظهار أسماء الطالبات</button></div><div id="studentsPreview" class="table-wrap hidden"></div>
+</div>
+
+
+
+<div class="card exam-workspace-section" id="scheduleCard">
+<h2>🕐 2) جدول مواعيد المعلمات</h2>
+<p class="hint">الصقي الجدول كما هو. البرنامج يحاول قراءة الوقت حتى لو كان اسم المعلمة بين الوقتين، أو الوقت موزعًا على أكثر من سطر.</p>
+<label for="scheduleInput">رسالة مواعيد المعلمات</label>
+<textarea id="scheduleInput" rows="8" placeholder="مثال:
+معلماتنا الحبيبات عندنا اختبار يوم الثلاثاء
+وفاء خليل 11..12
+فاطمة محمد 12 إلى 1
+مرفت 2 م - 3 م"></textarea>
+<div class="actions">
+<button type="button" id="parseScheduleBtn" class="primary">🔍 تحليل المواعيد فقط</button>
+<button type="button" id="clearScheduleBtn" class="gray">🗑️ مسح</button><button type="button" id="undoScheduleBtn" class="gray">↩️ تراجع</button>
+<button type="button" id="saveScheduleBtn" class="green" disabled style="display:none">💾 حفظ مواعيد الاختبار</button>
+</div>
+<div id="scheduleStatus" class="status"></div>
+<div id="scheduleStats" class="stats"></div>
+<div id="scheduleIssues"></div>
+<div id="schedulePreview" class="table-wrap"></div>
+<p class="hint">سعة كل معلمة تُحسب تلقائيًا من وقتها ومدة الطالبة المحددة في بيانات الاختبار. المعلمات الموجودات في الرسالة فقط سيُعتبرن متاحات للاختبار.</p>
+</div>
+
+<div class="card exam-workspace-section" id="guide-qalun">
+<h2>📖 3) معلمات طالبات قالون</h2>
+<p class="hint">اختاري المعلمات التي تريدين أن تستقبل طالبات قالون في هذا الاختبار. حللي المواعيد أولًا.</p>
+<div id="qalunTeachers" class="checks">حللي المواعيد أولًا.</div>
+<div class="actions"><button type="button" id="selectAllQalunBtn" class="green">☑ اختيار الكل</button><button type="button" id="clearQalunBtn" class="gray">إلغاء الكل</button><button type="button" id="saveQalunBtn" class="primary" style="display:none">💾 حفظ اختيار معلمات قالون</button><span id="qalunSaveStatus" class="status qalun-save-status" role="status" aria-live="polite"></span></div>
+</div>
+
+<div class="card exam-workspace-section" id="guide-generate">
+<h2>⚙️ 5) إنشاء القوائم</h2>
+<p class="hint">اختاري مدة اختبار كل طالبة في هذا الاختبار. الافتراضي 5 دقائق، ويمكن اختيار 10 دقائق عند الحاجة.</p>
+<div class="duration-picker"><b>⏱️ وقت كل طالبة:</b><label><input type="radio" name="listDuration" value="5" checked> 5 دقائق</label><label><input type="radio" name="listDuration" value="10"> 10 دقائق</label></div>
+<div class="save-all-inline"><button type="button" id="saveAllWorkspaceBtn" class="green">💾 حفظ بيانات الاختبار</button><button type="button" id="publishExamBtn" class="primary">📢 نشر الاختبار</button><div id="saveAllWorkspaceStatus" class="status"></div></div>
+<p class="hint">التوزيع متوازن قدر الإمكان، مع احترام سعة كل معلمة، وطالبات قالون لا تذهب إلا للمعلمات المختارات.</p>
+<div class="actions"><button type="button" id="generateListsBtn" class="green">⚙️ إنشاء القوائم</button></div>
+<div id="listGenerationStatus" class="status"></div><div id="listReview"></div><div id="generatedLists"></div>
+</div>
+
+<div class="card hidden" id="teacherManagementCard">
+<div class="section-action-head"><h2>👩‍🏫 إدارة المعلمات</h2><button type="button" class="soft" id="backFromTeachers">↩️ القائمة الرئيسية</button></div>
+<div id="teacherQuickActions" class="teacher-quick-actions" aria-label="إدارة المعلمات">
+  <button type="button" id="quickManageTeachers" class="teacher-quick-btn teacher-quick-manage" title="إدارة المعلمات: تعديل البيانات أو حذف معلمة" aria-label="إدارة المعلمات: تعديل البيانات أو حذف معلمة">✏️ إدارة المعلمات</button>
+  <button type="button" id="quickAddTeacher" class="teacher-quick-btn teacher-quick-add" title="إضافة معلمة جديدة" aria-label="إضافة معلمة جديدة">＋ إضافة معلمة</button>
+</div>
+<div id="teacherCountStatus" class="status show info"></div>
+</div>
+<div class="card hidden" id="registrationsCard">
+<div class="section-action-head"><h2>📋 التسجيلات</h2></div>
+<div id="registrationsTable" class="table-wrap"></div>
+</div>
+<div class="card hidden" id="issuesCard"><div class="section-action-head"><h2>📨 البلاغات والشكاوى</h2></div><div id="issuesList"></div></div>
+<div class="card hidden" id="finishExamPanel" style="margin-top:14px;border:1px solid #efcaca;background:#fffafa">
+  <h3 style="margin:0 0 6px;color:#a12626">إنهاء الاختبار</h3>
+  <p class="hint">بعد انتهاء الاختبار، يمكنك حذف بياناته نهائيًا. سيُحذف الاختبار وتسجيلات الطالبات وقائمتهن ومواعيده والبلاغات والإعدادات وسجل الأحداث المرتبط به. لن تُحذف بيانات المعلمات نفسها، ولن يمكن التراجع عن الحذف.</p>
+  <div class="actions"><button type="button" id="deleteExamBtn" class="gray" style="background:#a12626;color:white;border-color:#a12626" disabled>🗑️ حذف بيانات الاختبار نهائيًا</button></div>
+</div>
+
+<div id="teacherEditorModal" class="teacher-manager-modal hidden" role="dialog" aria-modal="true" aria-labelledby="teacherEditorTitle">
+  <div class="teacher-manager-box">
+    <div class="teacher-manager-head"><h3 id="teacherEditorTitle">إضافة معلمة</h3><button type="button" id="closeTeacherEditor" class="gray" aria-label="إغلاق">✕</button></div>
+    <form id="teacherForm">
+      <input id="teacherId" type="hidden">
+      <label for="teacherName">اسم المعلمة</label><input id="teacherName" required maxlength="160">
+      <div class="two">
+        <div><label for="teacherPhone">رقم الهاتف</label><input id="teacherPhone" maxlength="80"></div>
+        <div><label for="teacherWhatsapp">واتساب</label><input id="teacherWhatsapp" maxlength="120"></div>
+        <div><label for="teacherTelegram">تليجرام</label><input id="teacherTelegram" maxlength="120"></div>
+        <div><label for="teacherMessenger">مسنجر</label><input id="teacherMessenger" maxlength="120"></div>
+      </div>
+      <label for="teacherNotes">ملاحظات</label><input id="teacherNotes" maxlength="1000">
+      <div class="actions"><button class="primary" type="submit">حفظ المعلمة</button><button class="gray" type="button" id="clearTeacherBtn">تفريغ الحقول</button></div>
+    </form>
+    <div id="teacherFormStatus" class="status"></div>
+  </div>
+</div>
+<div id="teacherManagerModal" class="teacher-manager-modal hidden" role="dialog" aria-modal="true" aria-labelledby="teacherManagerTitle">
+  <div class="teacher-manager-box">
+    <div class="teacher-manager-head"><h3 id="teacherManagerTitle">إدارة المعلمات</h3><button type="button" id="closeTeacherManager" class="gray" aria-label="إغلاق">✕</button></div>
+    <p class="hint">اختاري تعديل بيانات المعلمة أو حذفها. لو كانت مرتبطة باختبار أو تسجيل سابق، سيُحفظ سجلها وتُعطّل بدل حذفها نهائيًا.</p>
+    <input id="teacherManagerSearch" type="search" placeholder="🔎 البحث عن معلمة..." autocomplete="off">
+    <div id="teacherManagerList"></div>
+  </div>
+</div>
+</div>
+<div id="capacityChoiceModal" class="teacher-manager-modal hidden" role="dialog" aria-modal="true" aria-labelledby="capacityChoiceTitle">
+  <div class="teacher-manager-box">
+    <div class="teacher-manager-head"><h3 id="capacityChoiceTitle">⚠️ سعة المعلمات غير كافية</h3><button type="button" id="closeCapacityChoice" class="gray" aria-label="إغلاق">✕</button></div>
+    <p id="capacityChoiceMessage" class="hint">عدد الطالبات أكبر من السعة المتاحة حاليًا.</p>
+    <p class="hint">اختاري إضافة معلمة الآن، أو حفظ الاختبار بالسعة الحالية وإضافة معلمة لاحقًا. الطالبات اللاتي لا يجدن موعدًا سيبقين محفوظات دون توزيع.</p>
+    <div class="actions"><button type="button" id="addTeacherNowBtn" class="soft">👩‍🏫 إضافة معلمة الآن</button><button type="button" id="addTeacherLaterBtn" class="green">🕐 إضافة معلمة لاحقًا</button></div>
+  </div>
+</div>
+</section>
+<footer>منظّم اختبارات الأكاديمية · لا تشاركي كلمة مرور الإدارة مع أي شخص</footer>
+</main>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const SUPABASE_URL = "https://hwlwtolzohfrjkxsoqyc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_rFidP6TBB8thOXqsKbP4BA_VCjLckBa";
+const API_URL = SUPABASE_URL + "/functions/v1/exam-organizer-api";
+const ADMIN_EMAIL = "saramoomen01020127827@gmail.com";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+const $ = (id) => document.getElementById(id);
+let currentExam = null, foundStudent = null, publicTeachers = [], publicExams = [], selectedPublicExamId = "", exams = [], teachers = [], dashboard = null;
+let publicExamLoadSeq = 0, adminDashboardLoadSeq = 0;
+let accessToken = null;
+let pendingCapacitySave = null, allowUnderCapacitySaveOnce = false;
+let loadedScheduleSnapshot = "";
+const activeStatuses = ["registered","confirmed","needs_review"];
+
+function status(id, message, kind="info") {
+  const el = $(id); if (!el) return;
+  el.className = "status show " + kind; el.textContent = message || "";
+}
+function clearStatus(id) { const el=$(id); if(el){el.className="status";el.textContent="";} }
+function safe(v) { return String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function showTab(id) {
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("active",p.id===id));
+}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
+
+async function api(action, payload={}, auth=true) {
+  const headers = {"Content-Type":"application/json","apikey":SUPABASE_KEY};
+  if (auth && accessToken) headers.Authorization = "Bearer " + accessToken;
+  const controller = new AbortController();
+  const publicRequest = action === "public_exams" || action === "public_exam";
+  const timeoutId = publicRequest ? setTimeout(() => controller.abort(), 15000) : null;
+  let response;
+  try {
+    response = await fetch(API_URL,{method:"POST",headers,body:JSON.stringify({action,...payload}),signal:controller.signal});
+  } catch (error) {
+    if (publicRequest && error?.name === "AbortError") throw new Error("PUBLIC_EXAM_TIMEOUT");
+    throw error;
+  } finally {
+    if (timeoutId !== null) clearTimeout(timeoutId);
+  }
+  let result={}; try { result=await response.json(); } catch {}
+  if (!response.ok) throw new Error(result.error || "REQUEST_FAILED");
+  return result;
+}
+
+// Run independent saves in small parallel batches instead of waiting for every request one by one.
+async function runLimited(items,limit,worker){
+ let next=0;
+ const workers=Array.from({length:Math.min(limit,items.length)},async()=>{
+  while(true){const index=next++;if(index>=items.length)return;await worker(items[index],index);}
+ });
+ await Promise.all(workers);
+}
+const messages = {
+  RATE_LIMITED:"تم إرسال طلبات كثيرة خلال وقت قصير. انتظري دقيقة ثم حاولي مرة أخرى.",
+  NO_PUBLISHED_EXAM:"لا يوجد اختبار منشور للتسجيل حاليًا.",
+  REGISTRATION_PAUSED:"التسجيل متوقف مؤقتًا. حاولي لاحقًا.",
+  REGISTRATION_CLOSED:"التسجيل مغلق حاليًا.",
+  STUDENT_NUMBER_REQUIRED:"من فضلك أدخلي رقم الطالبة.",
+  STUDENT_NOT_FOUND:"لم يتم العثور على رقم الطالبة. راجعي الرقم أو أرسلي بلاغًا.",
+  ALREADY_REGISTERED:"يوجد تسجيل سابق لهذا الرقم في الاختبار.",
+  TEACHER_NOT_AVAILABLE:"المعلمة غير متاحة لهذا الاختبار. اختاري معلمة أخرى.",
+  TEACHER_DOES_NOT_ACCEPT_QALUN:"المعلمة المحددة لا تستقبل طالبات قالون.",
+  TEACHER_CAPACITY_REACHED:"اكتملت سعة المعلمة. اختاري معلمة أخرى.",
+  ADMIN_AUTH_REQUIRED:"سجّلي الدخول أولًا.",
+  ADMIN_AUTH_INVALID:"انتهت جلسة الدخول. سجّلي الدخول مرة أخرى.",
+  ADMIN_ACCESS_DENIED:"الحساب مسجّل لكنه غير مضاف إلى قائمة الإدارة.",
+  INVALID_FIELDS:"راجعي الحقول المطلوبة.",
+  TITLE_REQUIRED:"اكتبي اسم الاختبار.",
+  TEACHER_NAME_REQUIRED:"اكتبي اسم المعلمة.",
+  CAPACITY_OVERRIDE_REASON_REQUIRED:"اكتبي سبب تغيير السعة الاستثنائية.",
+  PUBLIC_EXAM_TIMEOUT:"استغرق الاتصال بالخادم أكثر من 15 ثانية. تحققي من الإنترنت ثم أعيدي تحميل الاختبارات."
+};
+function readable(error) {
+  const key = typeof error === "string" ? error : error?.message;
+  if (messages[key]) return messages[key];
+  if (typeof key === "string" && /[\u0600-\u06FF]/.test(key)) return key;
+  return key === "Invalid login credentials" ? "كلمة مرور الإدارة غير صحيحة." : key === "Failed to fetch" ? "تعذر الاتصال بالخادم. تحققي من الإنترنت وحاولي مرة أخرى." : "حدث خطأ أثناء تنفيذ الطلب. حاولي مرة أخرى.";
+}
+function formatTeacherTimeRange(start,end){
+ const parse=(v)=>{const m=String(v||"").match(/^(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):null;};
+ const a=parse(start),b=parse(end);if(a===null||b===null)return "";
+ const fmt=(n)=>{n=((n%1440)+1440)%1440;const h=Math.floor(n/60);return String(h%12||12).padStart(2,"0")+":"+String(n%60).padStart(2,"0");};
+ const suffix=(n)=>{n=((n%1440)+1440)%1440;return n>=720?"م":"ص";};
+ return suffix(a)===suffix(b)?fmt(a)+"-"+fmt(b)+" "+suffix(b):fmt(a)+" "+suffix(a)+" - "+fmt(b)+" "+suffix(b);
+}
+function capacityLabel(t) {
+  if (t.remaining === null || t.remaining === undefined) return "السعة غير محددة";
+  return t.remaining > 0 ? "متاح " + t.remaining + " مكان" : "اكتملت السعة";
+}
+async function loadPublicExam(requestedExamId=selectedPublicExamId) {
+  const loadSeq = ++publicExamLoadSeq;
+  $("publicExamRetry").classList.add("hidden");
+  status("publicExamStatus","جارٍ التحقق من الاختبار المتاح...","info");
+  try {
+    const listData = await api("public_exams",{},false);
+    if (loadSeq !== publicExamLoadSeq) return;
+    publicExams = listData.exams || [];
+    if (!publicExams.length) {
+      currentExam=null; publicTeachers=[]; selectedPublicExamId="";
+      $("publicExamPickerWrap").classList.add("hidden");
+      $("publicExamInfo").classList.add("hidden"); $("lookupForm").classList.add("hidden");
+      $("studentResult").innerHTML="";
+      status("publicExamStatus","لا يوجد اختبار منشور للطالبات حاليًا.","warn");
+      return;
+    }
+    selectedPublicExamId = publicExams.some(x=>x.id===requestedExamId) ? requestedExamId : "";
+    $("publicExamPickerWrap").classList.remove("hidden");
+    $("publicExamPicker").innerHTML='<option value="">اختاري الاختبار أولًا</option>'+publicExams.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+(x.exam_date?' · '+safe(x.exam_date):'')+'</option>').join("");
+    $("publicExamPicker").value=selectedPublicExamId;
+    $("studentResult").innerHTML="";
+    $("studentNumber").value="";
+    currentExam=null; publicTeachers=[];
+    $("publicExamInfo").classList.add("hidden");
+    $("lookupForm").classList.add("hidden");
+    if (!selectedPublicExamId) {
+      status("publicExamStatus","اختاري الاختبار الخاص بكِ أولًا لعرض بياناته وإتاحة التسجيل.","info");
+      return;
+    }
+    const data = await api("public_exam",{exam_id:selectedPublicExamId},false);
+    if (loadSeq !== publicExamLoadSeq) return;
+    currentExam=data.exam; publicTeachers=data.teachers||[];
+    if (!currentExam) {
+      status("publicExamStatus","الاختبار المحدد غير متاح حاليًا.","warn");
+      $("publicExamInfo").classList.add("hidden"); $("lookupForm").classList.add("hidden"); return;
+    }
+    $("publicExamInfo").classList.remove("hidden");
+    $("publicExamInfo").innerHTML = '<div class="stats"><div class="stat"><b>'+safe(currentExam.title)+'</b><span>الاختبار</span></div><div class="stat"><b>'+safe(currentExam.exam_date||"لم يُحدد")+'</b><span>التاريخ</span></div><div class="stat"><b>'+safe(currentExam.default_duration_minutes)+' دقائق</b><span>مدة الطالبة</span></div></div>' + (currentExam.instructions?'<p class="hint">'+safe(currentExam.instructions)+'</p>':"");
+    if (currentExam.registration_state === "open") {
+      const anySlotAvailable = publicTeachers.some(t=>t.remaining===null || t.remaining===undefined || t.remaining>0);
+      if(!anySlotAvailable){
+        status("publicExamStatus","تم إغلاق التسجيل تلقائيًا لعدم وجود مواعيد متاحة حاليًا. تابعي القوائم التي سترسلها الإدارة لمعرفة موعدك.","bad");
+        $("lookupForm").classList.add("hidden");
+      }else{
+        status("publicExamStatus","التسجيل مفتوح في الاختبار المحدد. أدخلي رقم الطالبة للمتابعة.","ok"); $("lookupForm").classList.remove("hidden");
+      }
+    } else {
+      if(currentExam.registration_state==="paused"){
+        const el=$("publicExamStatus");el.className="status show warn";el.innerHTML="التسجيل متوقف مؤقتًا في الاختبار المحدد.<br>عودي لاختيار الموعد المناسب بعد قليل.";
+      }else{
+        const el=$("publicExamStatus");el.className="status show bad";el.innerHTML="تم إغلاق التسجيل في هذا الاختبار.<br>تابعي القوائم التي سترسلها الإدارة لمعرفة موعدك.";
+      }
+      $("lookupForm").classList.add("hidden");
+    }
+  } catch(e) {
+    if (loadSeq !== publicExamLoadSeq) return;
+    status("publicExamStatus",readable(e),"bad");
+    $("publicExamRetry").classList.remove("hidden");
+  }
+}
+$("retryPublicExam").addEventListener("click",()=>loadPublicExam(""));
+$("publicExamPicker").addEventListener("change",async()=>{
+  selectedPublicExamId=$("publicExamPicker").value;
+  $("studentNumber").value="";
+  $("studentResult").innerHTML="";
+  await loadPublicExam(selectedPublicExamId);
+});
+async function showStudentRegistration(student,num){
+ foundStudent={...student,student_number:num};$("issueStudentNumber").value=num;$("issueName").value=student.name;
+ const isQalun=student.riwaya==="qalun",choices=publicTeachers.filter(t=>(!isQalun||t.acceptsQalun)&&(t.remaining===null||t.remaining>0||t.id===student.currentTeacherId));
+ const cards=choices.map(t=>'<label class="teacher" style="display:block;cursor:pointer"><span><input type="radio" name="teacherChoice" value="'+safe(t.id)+'" style="width:auto;margin-left:7px" '+(t.id===student.currentTeacherId?'checked':'')+'>'+(t.startTime&&t.endTime?safe(formatTeacherTimeRange(t.startTime,t.endTime)):'موعد غير محدد')+'</span></label>').join("");
+ const intro=student.alreadyRegistered?'أنتِ مسجلة بالفعل. يمكنك تغيير موعدك طالما التسجيل مفتوح.':'راجعي بياناتك ثم اختاري الموعد المناسب.';
+ $("studentResult").innerHTML='<div class="status show '+(student.alreadyRegistered?'warn':'ok')+'">'+intro+'</div><div class="card" style="margin-top:10px"><h3>'+safe(student.name)+'</h3><span class="tag '+(isQalun?'warn':'good')+'">'+(isQalun?'رواية قالون':'رواية حفص')+'</span><label>اختاري الموعد</label><div class="grid">'+(cards||'<p class="hint">لا توجد مواعيد متاحة لهذه الرواية حاليًا.</p>')+'</div><div class="actions"><button id="registerBtn" class="green" type="button" '+(!choices.length?'disabled':'')+'>'+(student.alreadyRegistered?'تأكيد تغيير الموعد':'تأكيد التسجيل')+'</button><button id="changeStudentBtn" class="soft" type="button">الرجوع لاختيار الاسم</button></div><div id="registerStatus" class="status"></div></div>';
+ $("changeStudentBtn")?.addEventListener("click",()=>{$("lookupForm").requestSubmit();});
+ $("registerBtn")?.addEventListener("click",async()=>{
+   const selected=document.querySelector('input[name="teacherChoice"]:checked');
+   if(!selected){status("registerStatus","اختاري الموعد أولًا.","warn");return;}
+   const targetId=selected.value,previousTeacherId=student.currentTeacherId,wasRegistered=!!student.alreadyRegistered;
+   $("registerBtn").disabled=true;
+   try{
+     await api("register_student",{exam_id:currentExam.id,student_id:student.id,teacher_id:targetId},false);
+     publicTeachers=publicTeachers.map(t=>{
+       let remaining=t.remaining;
+       if(remaining!==null&&remaining!==undefined){
+         if(!wasRegistered&&t.id===targetId)remaining=Math.max(0,remaining-1);
+         else if(wasRegistered&&previousTeacherId===t.id&&previousTeacherId!==targetId)remaining+=1;
+         else if(wasRegistered&&t.id===targetId&&previousTeacherId!==targetId)remaining=Math.max(0,remaining-1);
+       }
+       return {...t,remaining};
+     });
+     student.alreadyRegistered=true;student.currentTeacherId=targetId;
+     // يحدّث الخادم حالة التسجيل تلقائيًا إذا استُهلك آخر مقعد، حتى لا تظهر معلمة مضافة لاحقًا للطالبات.
+     api("public_exam",{exam_id:currentExam.id},false).then(data=>{if(data?.exam)currentExam=data.exam;if(data?.exam?.registration_state==="closed"){status("publicExamStatus","تم إغلاق التسجيل لعدم وجود مواعيد متاحة حاليًا. تابعي القوائم التي سترسلها الإدارة لمعرفة موعدك.","bad");$("lookupForm").classList.add("hidden");}}).catch(()=>{});
+     status("registerStatus",wasRegistered?"تم تغيير موعدك بنجاح.":"تم تسجيل اختيارك بنجاح. احتفظي بهذه المعلومة وتابعي أي تعليمات من الإدارة.","ok");
+     $("registerBtn").textContent="تم حفظ الاختيار";
+   }catch(err){status("registerStatus",readable(err),"bad");$("registerBtn").disabled=false;}
+ });
+}
+$("lookupForm").addEventListener("submit",async e=>{e.preventDefault();const num=scheduleDigits($("studentNumber").value.trim()).replace(/\s/g,"");$("studentResult").innerHTML="";foundStudent=null;try{const r=await api("lookup_student",{student_number:num,exam_id:currentExam?.id},false);$("issueStudentNumber").value=num;if(r.students.length===1){await showStudentRegistration(r.students[0],num);return;}const choices=r.students.map((student,i)=>'<label class="teacher" style="display:block;cursor:pointer"><span><input type="radio" name="studentNameChoice" value="'+safe(student.id)+'" style="width:auto;margin-left:7px" '+(i===0?'checked':'')+'>'+safe(student.name)+'</span><div class="hint"><span class="tag '+(student.riwaya==="qalun"?'warn':'good')+'">'+(student.riwaya==="qalun"?'رواية قالون':'رواية حفص')+'</span>'+(student.alreadyRegistered?'<span class="tag warn">مسجلة بالفعل</span>':'')+'</div></label>').join("");$("studentResult").innerHTML='<div class="status show ok">الرقم ده مشترك بين '+r.students.length+' طالبات. اختاري اسمك أولًا.</div><div class="card" style="margin-top:10px"><label>اسم الطالبة</label><div class="grid">'+choices+'</div><div class="actions"><button id="confirmStudentChoice" class="green" type="button">متابعة</button></div></div>';$("confirmStudentChoice")?.addEventListener("click",async()=>{const selected=document.querySelector('input[name="studentNameChoice"]:checked');if(!selected)return;const student=r.students.find(x=>x.id===selected.value);if(student)await showStudentRegistration(student,num);});}catch(err){$("studentResult").innerHTML='<div class="status show bad">'+safe(readable(err))+'</div>';}});
+
+$("toggleIssueForm").addEventListener("click",()=>{
+ const card=$("studentIssueCard"),opening=card.classList.contains("hidden");
+ card.classList.toggle("hidden",!opening);
+ $("toggleIssueForm").setAttribute("aria-expanded",String(opening));
+ if(opening) $("issueStudentNumber").focus();
+});
+$("closeIssueForm").addEventListener("click",()=>{
+ $("studentIssueCard").classList.add("hidden");
+ $("toggleIssueForm").setAttribute("aria-expanded","false");
+});
+
+$("issueForm").addEventListener("submit",async e=>{
+  e.preventDefault(); const message=$("issueMessage").value.trim();
+  try {
+    await api("report_issue",{exam_id:currentExam?.id,student_number:$("issueStudentNumber").value.trim(),student_name:$("issueName").value.trim(),category:$("issueCategory").value,message},false);
+    status("issueStatus","تم إرسال البلاغ للإدارة. شكرًا لتنبيهنا.","ok"); $("issueMessage").value="";
+  } catch(err) { status("issueStatus",currentExam?readable(err):"لا يوجد اختبار منشور يمكن إرفاق البلاغ به حاليًا.","bad"); }
+});
+
+
+let adminViewMode="home";
+function showAdminView(mode){
+  adminViewMode=mode;
+  const home=mode==="home",newExam=mode==="new",savedPicker=mode==="saved",savedDetails=mode==="saved-details",exam=newExam||savedDetails,teachersView=mode==="teachers";
+  const savedView=savedPicker||savedDetails;
+  $("adminHomeMenu").classList.toggle("hidden",!home);
+  $("examAdminHeader").classList.toggle("hidden",!exam);
+  $("examPickerArea").classList.toggle("hidden",!savedView);
+  $("backToAdminMenu").classList.toggle("hidden",savedDetails);
+  ["guide-students","scheduleCard","guide-qalun","guide-generate"].forEach(id=>$(id).classList.toggle("hidden",!exam));
+  $("teacherManagementCard").classList.toggle("hidden",!teachersView);
+  $("registrationsCard").classList.toggle("hidden",!savedDetails);
+  $("issuesCard").classList.toggle("hidden",!savedDetails);
+  $("finishExamPanel").classList.toggle("hidden",!savedDetails);
+  $("examFormPanel").classList.toggle("hidden",!newExam&&!savedDetails);
+  $("toggleExamForm").classList.toggle("hidden",!newExam&&!savedDetails);
+  $("toggleExamForm").setAttribute("aria-expanded",String(newExam||savedDetails));
+  $("saveAllWorkspaceBtn").textContent=savedDetails?"🔄 تحديث البيانات":"💾 حفظ بيانات الاختبار";
+  $("saveAllWorkspaceBtn").title=savedDetails?"حفظ التعديلات الحالية على بيانات الاختبار":"حفظ بيانات الاختبار الجديد";
+  if(home){$("adminStatus").textContent="";}
+}
+function clearWorkspaceForNewExam(){
+  $("examSelect").value="";dashboard=null;$("examForm").reset();$("editExamId").value="";$("examDuration").value="5";$("registrationState").value="closed";
+  $("studentsInput").value="";$("scheduleInput").value="";
+  document.querySelectorAll('input[name="listDuration"]').forEach(r=>r.checked=r.value==="5");
+  parsedExamStudents=[];parsedSchedule=[];scheduleIssues=[];generatedExamGroups=[];savedQalunTeacherIds=new Set();workspaceLoadedExamId="";
+  ["studentsPreview","schedulePreview","scheduleStats","studentsStats","studentIssues","scheduleIssues","generatedLists","listReview","qalunTeachers","dashboardStats"].forEach(id=>$(id).innerHTML="");
+  $("registrationsTable").innerHTML="";$("issuesList").innerHTML="";
+  ["studentsStatus","scheduleStatus","qalunSaveStatus","listGenerationStatus","saveAllWorkspaceStatus","examFormStatus"].forEach(id=>clearStatus(id));
+  $("deleteExamBtn").disabled=true;
+}
+
+async function refreshSession() {
+  const {data}=await supabase.auth.getSession();
+  accessToken=data.session?.access_token||null;
+  $("loginCard").classList.toggle("hidden",!!accessToken);
+  $("adminWorkspace").classList.toggle("hidden",!accessToken);
+  $("teacherQuickActions").classList.toggle("hidden",!accessToken);
+  if(!accessToken){$("teacherEditorModal").classList.add("hidden");showAdminView("home");}
+  if(accessToken){showAdminView("home");await loadAdmin();}
+}
+$("loginForm").addEventListener("submit",async e=>{
+  e.preventDefault(); status("loginStatus","جارٍ تسجيل الدخول...","info");
+  const {data,error}=await supabase.auth.signInWithPassword({email:ADMIN_EMAIL,password:$("adminPassword").value});
+  if(error){status("loginStatus",readable(error),"bad");return;}
+  accessToken=data.session?.access_token||null;
+  $("adminPassword").value="";
+  await refreshSession();
+  if(accessToken) status("adminStatus","تم تسجيل الدخول. لو ظهرت رسالة رفض صلاحيات، فالحساب يحتاج إضافته إلى قائمة الإدارة.","ok");
+});
+
+
+$("openNewExamView").addEventListener("click",()=>{showAdminView("new");clearWorkspaceForNewExam();});
+$("openSavedExamView").addEventListener("click",async()=>{$("examSelect").value="";workspaceLoadedExamId="";savedQalunTeacherIds=new Set();generatedExamGroups=[];showAdminView("saved");await loadAdmin();showAdminView($("examSelect").value?"saved-details":"saved");});
+$("openTeachersView").addEventListener("click",()=>showAdminView("teachers"));
+$("backToAdminMenu").addEventListener("click",()=>showAdminView("home"));
+$("backFromSavedPicker").addEventListener("click",()=>showAdminView("home"));
+$("backFromTeachers").addEventListener("click",()=>showAdminView("home"));
+
+
+$("deleteExamBtn").addEventListener("click",async()=>{
+  const examId=$("examSelect").value;
+  const exam=exams.find(x=>x.id===examId);
+  if(!exam){status("adminStatus","اختاري الاختبار الذي تريدين حذفه أولًا.","bad");return;}
+  const confirmed=confirm(
+    "تحذير: حذف نهائي لا يمكن التراجع عنه.\n\n"+
+    "الاختبار: «"+exam.title+"»\n\n"+
+    "سيتم حذف بيانات الاختبار بالكامل، بما فيها تسجيلات الطالبات، وقائمة الطالبات، والمواعيد والقوائم المُنشأة، والبلاغات والإعدادات وسجل الأحداث المرتبط بالاختبار.\n\n"+
+    "لن تُحذف بيانات المعلمات العامة.\n\nهل أنتِ متأكدة من حذف هذا الاختبار وكل بياناته؟"
+  );
+  if(!confirmed)return;
+  const btn=$("deleteExamBtn"),oldText=btn.textContent;
+  btn.disabled=true;btn.textContent="جارٍ حذف بيانات الاختبار...";
+  try{
+    const result=await api("admin_delete_exam",{exam_id:examId});
+    workspaceLoadedExamId="";savedQalunTeacherIds=new Set();generatedExamGroups=[];parsedExamStudents=[];parsedSchedule=[];scheduleIssues=[];
+    $("generatedLists").innerHTML="";$("listReview").innerHTML="";
+    await loadAdmin();
+    if(!exams.length){
+      $("examForm").reset();$("editExamId").value="";$("examDuration").value="5";$("registrationState").value="closed";
+      $("studentsInput").value="";$("scheduleInput").value="";
+      $("studentsPreview").innerHTML="";$("schedulePreview").innerHTML="";$("scheduleStats").innerHTML="";
+      $("studentsStats").innerHTML="";$("studentIssues").innerHTML="";$("scheduleIssues").innerHTML="";
+      $("generatedLists").innerHTML="";$("listReview").innerHTML="";
+      workspaceLoadedExamId="";
+    }
+    status("adminStatus","تم حذف الاختبار «"+(result.result?.title||exam.title)+"» وكل بياناته المرتبطة بنجاح.","ok");
+  }catch(err){
+    status("adminStatus",readable(err),"bad");
+  }finally{
+    btn.textContent=oldText;
+    btn.disabled=!$("examSelect").value;
+  }
+});
+$("examDuration").addEventListener("change",()=>{if(parsedSchedule.length)renderParsedSchedule();});
+$("refreshDashboardStats").addEventListener("click",async()=>{const btn=$("refreshDashboardStats");if(btn.disabled)return;btn.disabled=true;btn.textContent="…";try{await loadDashboard();}finally{btn.disabled=false;btn.textContent="↻";}});
+$("examSelect").addEventListener("change",async()=>{
+  const exam=exams.find(x=>x.id===$("examSelect").value);
+  workspaceLoadedExamId="";savedQalunTeacherIds=new Set();generatedExamGroups=[];$("generatedLists").innerHTML="";$("listReview").innerHTML="";
+  if(exam) fillExamForm(exam);
+  if(adminViewMode==="saved"||adminViewMode==="saved-details")showAdminView(exam?"saved-details":"saved");
+  await loadDashboard();
+  await renderTeachers();
+  if(adminViewMode==="saved"||adminViewMode==="saved-details")showAdminView(exam?"saved-details":"saved");
+});
+$("toggleExamForm").addEventListener("click",()=>{$("examFormPanel").classList.remove("hidden");$("toggleExamForm").setAttribute("aria-expanded","true");});
+
+function fillExamForm(x) {
+  $("editExamId").value=x.id; $("examTitle").value=x.title||""; $("examDate").value=x.exam_date||"";
+  $("examDuration").value=String(x.default_duration_minutes||5);
+  $("registrationState").value=x.registration_state||"closed"; $("examInstructions").value=x.instructions||"";
+}
+async function loadAdmin() {
+  if(!accessToken)return;
+  try {
+    const [er,tr]=await Promise.all([api("admin_list_exams"),api("admin_list_teachers")]);
+    exams=er.exams||[]; teachers=tr.teachers||[];
+    $("teacherCountStatus").textContent="عدد المعلمات المحفوظات: "+teachers.length;
+    const prior=$("examSelect").value;
+    $("examSelect").innerHTML=exams.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+' · '+safe(x.status)+'</option>').join("")||'<option value="">لا توجد اختبارات</option>';
+    if(exams.some(x=>x.id===prior)) $("examSelect").value=prior;
+    else if(exams.length && (adminViewMode==="saved"||adminViewMode==="saved-details")) $("examSelect").value=exams[0].id;
+    else $("examSelect").value="";
+    const selected=exams.find(x=>x.id===$("examSelect").value);
+    $("deleteExamBtn").disabled=!selected;
+    if(selected)fillExamForm(selected);
+    else {$("examForm").reset();$("editExamId").value="";$("studentsInput").value="";$("scheduleInput").value="";}
+    await loadDashboard(); await renderTeachers();
+    status("adminStatus","تم تحميل بيانات الإدارة.","ok");
+  } catch(e) { status("adminStatus",readable(e),"bad"); if(["ADMIN_AUTH_INVALID","ADMIN_AUTH_REQUIRED"].includes(e.message)){await supabase.auth.signOut();await refreshSession();} }
+}
+async function loadDashboard() {
+  const loadSeq = ++adminDashboardLoadSeq;
+  const examId=$("examSelect").value;
+  if(!examId){$("dashboardStats").innerHTML="";$("registrationsTable").innerHTML='<p class="hint">أنشئي اختبارًا أولًا.</p>';$("issuesList").innerHTML="";dashboard=null;return;}
+  try {
+    const dashboardData=await api("admin_dashboard",{exam_id:examId});
+    if(loadSeq!==adminDashboardLoadSeq || examId!==$("examSelect").value) return;
+    dashboard=dashboardData;
+    if(workspaceLoadedExamId!==examId){
+      const workspaceResult=await api("admin_get_workspace",{exam_id:examId});
+      if(loadSeq!==adminDashboardLoadSeq || examId!==$("examSelect").value) return;
+      const workspace=workspaceResult.workspace;
+      const savedStudents=(dashboard.students||[]).filter(s=>s.is_eligible!==false&&s.student_number&&s.student_name);
+      const settings=dashboard.teacherSettings||[];
+      savedQalunTeacherIds=new Set(settings.filter(s=>s.is_available&&s.accepts_qalun).map(s=>s.teacher_id));
+      const toMinutes=(v)=>{const m=String(v||"").match(/^(\\d{1,2}):(\\d{2})/);return m?Number(m[1])*60+Number(m[2]):null;};
+      const savedStudentText=savedStudents.map(s=>String(s.student_number)+" | "+s.student_name+" | "+(s.riwaya==="qalun"?"قالون":"حفص")).join("\\n");
+      const savedScheduleText=settings.filter(s=>s.is_available&&s.start_time&&s.end_time&&s.teachers&&s.teachers.is_active!==false).map(s=>({teacherName:s.teachers.full_name,start:toMinutes(s.start_time),end:toMinutes(s.end_time)})).filter(s=>s.start!==null&&s.end!==null&&s.end>s.start).map(s=>s.teacherName+" "+scheduleFmt(s.start)+" - "+scheduleFmt(s.end)).join("\\n");
+      if(workspace){
+        $("studentsInput").value=workspace.students_input||savedStudentText;
+        $("scheduleInput").value=workspace.schedule_input||savedScheduleText;
+        const duration=Number(workspace.list_duration_minutes)===10?10:5;
+        document.querySelectorAll('input[name="listDuration"]').forEach(r=>r.checked=Number(r.value)===duration);
+        $("examDuration").value=String(duration);
+        parseExamStudents();parseSchedule();
+        const savedGroups=Array.isArray(workspace.generated_lists)?workspace.generated_lists:[];
+        if(savedGroups.length){generatedExamGroups=savedGroups;renderGeneratedGroups(generatedExamGroups,generatedExamGroups.reduce((n,g)=>n+(g.students||[]).length,0));}
+        else {generatedExamGroups=[];$("generatedLists").innerHTML="";$("listReview").innerHTML="";}
+      } else {
+        $("studentsInput").value=savedStudentText;parseExamStudents();
+        $("scheduleInput").value=savedScheduleText;parseSchedule();
+        if(!savedStudents.length){$("studentsInput").value="";parsedExamStudents=[];parseExamStudents();}
+        if(!parsedSchedule.length){$("schedulePreview").innerHTML="";$("scheduleStats").innerHTML="";$("scheduleIssues").innerHTML="";$("saveScheduleBtn").disabled=true;}
+        generatedExamGroups=[];$("generatedLists").innerHTML="";$("listReview").innerHTML="";
+      }
+      renderQalunChoices();
+      workspaceLoadedExamId=examId;
+      loadedScheduleSnapshot=$("scheduleInput").value;
+      if(savedStudents.length||parsedSchedule.length)status("listGenerationStatus","تم استرجاع بيانات الاختبار المحفوظة. يمكنك إنشاء القوائم أو حفظ التعديلات.","ok");
+    }
+    const c=dashboard.counts||{};
+    const rosterCount=parsedExamStudents.length;
+    $("dashboardStats").innerHTML=[["الطالبات",rosterCount],["التسجيلات",c.registrations||0],["المسجلات",c.registered||0],["البلاغات",c.issues||0]].map(x=>'<div class="stat"><b>'+safe(x[1])+'</b><span>'+safe(x[0])+'</span></div>').join("");
+    const regs=dashboard.registrations||[];
+    $("registrationsTable").innerHTML='<h3>ملخص التسجيلات</h3>'+(regs.length?'<div class="table-wrap"><table><thead><tr><th>الطالبة</th><th>الرواية</th><th>الحالة</th><th>المعلمة</th><th>إجراء</th></tr></thead><tbody>'+regs.map(r=>'<tr><td>'+safe(r.student?.student_name||r.id.slice(0,8))+'<div class="hint">'+safe(r.student?.student_number||"")+'</div></td><td>'+safe(r.student?.riwaya==="qalun"?"قالون":"حفص")+'</td><td><select data-reg-status="'+safe(r.id)+'">'+["registered","confirmed","needs_review","cancelled","completed"].map(s=>'<option '+(r.status===s?'selected':'')+' value="'+s+'">'+({"registered":"مسجلة","confirmed":"مؤكدة","needs_review":"تحتاج مراجعة","cancelled":"ملغاة","completed":"مكتملة"}[s])+'</option>').join("")+'</select></td><td>'+safe((dashboard.teacherSettings||[]).find(t=>t.teacher_id===r.assigned_teacher_id)?.teachers?.full_name||"غير محددة")+'</td><td><button class="soft" data-save-reg="'+safe(r.id)+'">حفظ الحالة</button></td></tr>').join("")+'</tbody></table></div>':'<p class="hint">لا توجد تسجيلات بعد.</p>');
+    $("registrationsTable").querySelectorAll("[data-save-reg]").forEach(btn=>btn.addEventListener("click",async()=>{
+      const id=btn.dataset.saveReg, select=$("registrationsTable").querySelector('[data-reg-status="'+id+'"]');
+      btn.disabled=true;try{await api("admin_update_registration",{registration_id:id,status:select.value});status("adminStatus","تم تحديث حالة التسجيل.","ok");await loadDashboard();}catch(e){status("adminStatus",readable(e),"bad");}finally{btn.disabled=false;}
+    }));
+    $("issuesList").innerHTML='<h3 style="margin-top:16px">البلاغات</h3>'+((dashboard.issues||[]).map(issue=>'<div class="issue"><b>'+safe(issue.student_name||"طالبة غير محددة")+'</b> <small>('+safe(issue.student_number||"بدون رقم")+' · '+safe(issue.category)+')</small><p>'+safe(issue.message)+'</p><div class="two"><div><label>الحالة</label><select id="issue-status-'+safe(issue.id)+'">'+["open","in_progress","resolved","dismissed"].map(s=>'<option '+(issue.status===s?'selected':'')+' value="'+s+'">'+({"open":"مفتوح","in_progress":"قيد المعالجة","resolved":"تم الحل","dismissed":"مستبعد"}[s])+'</option>').join("")+'</select></div><div><label>ملاحظة الإدارة</label><input id="issue-note-'+safe(issue.id)+'" value="'+safe(issue.admin_note||"")+'"></div></div><div class="actions"><button class="soft" data-save-issue="'+safe(issue.id)+'">حفظ البلاغ</button></div></div>').join("")||'<p class="hint">لا توجد بلاغات.</p>');
+    $("issuesList").querySelectorAll("[data-save-issue]").forEach(btn=>btn.addEventListener("click",async()=>{
+      const id=btn.dataset.saveIssue;btn.disabled=true;
+      try{await api("admin_update_issue",{issue_id:id,status:$("issue-status-"+id).value,admin_note:$("issue-note-"+id).value});status("adminStatus","تم تحديث البلاغ.","ok");await loadDashboard();}catch(e){status("adminStatus",readable(e),"bad");}finally{btn.disabled=false;}
+    }));
+  } catch(e) { status("adminStatus",readable(e),"bad"); }
+}
+$("examForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  status("examFormStatus","استخدمي زر «حفظ بيانات الاختبار» أسفل الصفحة لحفظ جميع البيانات مرة واحدة.","info");
+});
+$("teacherForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  try{
+    await api("admin_save_teacher",{teacher_id:$("teacherId").value||undefined,full_name:$("teacherName").value,phone:$("teacherPhone").value,whatsapp:$("teacherWhatsapp").value,telegram:$("teacherTelegram").value,messenger:$("teacherMessenger").value,notes:$("teacherNotes").value});
+    const r=await api("admin_list_teachers");teachers=r.teachers||[];
+    closeTeacherEditor();await renderTeacherManager();$("teacherCountStatus").textContent="عدد المعلمات المحفوظات: "+teachers.length;
+    status("adminStatus","تم حفظ بيانات المعلمة بنجاح.","ok");
+  }catch(err){status("teacherFormStatus",readable(err),"bad");}
+});
+function clearTeacherForm(){ $("teacherForm").reset();$("teacherId").value=""; }
+$("clearTeacherBtn").addEventListener("click",clearTeacherForm);
+
+function openTeacherEditor(teacher=null){
+  clearTeacherForm();$("teacherFormStatus").className="status";
+  $("teacherEditorTitle").textContent=teacher?"تعديل بيانات المعلمة":"إضافة معلمة جديدة";
+  if(teacher){$("teacherId").value=teacher.id;$("teacherName").value=teacher.full_name||"";$("teacherPhone").value=teacher.phone||"";$("teacherWhatsapp").value=teacher.whatsapp||"";$("teacherTelegram").value=teacher.telegram||"";$("teacherMessenger").value=teacher.messenger||"";$("teacherNotes").value=teacher.notes||"";}
+  $("teacherEditorModal").classList.remove("hidden");setTimeout(()=> $("teacherName").focus({preventScroll:true}),150);
+}
+function closeTeacherEditor(){ $("teacherEditorModal").classList.add("hidden"); }
+$("quickAddTeacher").addEventListener("click",()=>openTeacherEditor());
+$("quickManageTeachers").addEventListener("click",openTeacherManager);
+$("closeTeacherEditor").addEventListener("click",closeTeacherEditor);
+$("teacherEditorModal").addEventListener("click",e=>{if(e.target===$("teacherEditorModal"))closeTeacherEditor();});
+$("closeTeacherManager").addEventListener("click",closeTeacherManager);
+$("teacherManagerModal").addEventListener("click",e=>{if(e.target===$("teacherManagerModal"))closeTeacherManager();});
+$("teacherManagerSearch").addEventListener("input",renderTeacherManager);
+
+function openTeacherManager(){
+  renderTeacherManager();
+  $("teacherManagerModal").classList.remove("hidden");
+}
+function closeTeacherManager(){ $("teacherManagerModal").classList.add("hidden"); }
+function renderTeacherManager(){
+  const box=$("teacherManagerList");
+  const q=String($("teacherManagerSearch").value||"").trim().toLocaleLowerCase();
+  const found=teachers.filter(t=>!q||String(t.full_name||"").toLocaleLowerCase().includes(q));
+  if(!found.length){box.innerHTML='<p class="hint">لا توجد معلمات مطابقة للبحث.</p>';return;}
+  box.innerHTML=found.map(t=>'<div class="teacher-manager-row"><div><div class="teacher-manager-name">'+safe(t.full_name)+'</div><div class="hint">'+safe(t.phone||t.whatsapp||t.telegram||t.messenger||"بيانات التواصل غير مضافة بعد")+'</div><div class="hint">'+(t.is_active?'<span class="tag good">نشطة</span>':'<span class="tag">غير نشطة</span>')+'</div></div><div class="teacher-manager-actions"><button type="button" class="teacher-mini-btn teacher-mini-edit" data-manager-edit="'+safe(t.id)+'" title="تعديل" aria-label="تعديل">✏️</button><button type="button" class="teacher-mini-btn teacher-mini-delete" data-manager-delete="'+safe(t.id)+'" title="حذف" aria-label="حذف">🗑️</button></div></div>').join("");
+  box.querySelectorAll("[data-manager-edit]").forEach(btn=>btn.addEventListener("click",()=>{
+    const t=teachers.find(x=>x.id===btn.dataset.managerEdit);if(!t)return;
+    closeTeacherManager();openTeacherEditor(t);
+    setTimeout(()=> $("teacherName").focus({preventScroll:true}),250);
+  }));
+  box.querySelectorAll("[data-manager-delete]").forEach(btn=>btn.addEventListener("click",async()=>{
+    const t=teachers.find(x=>x.id===btn.dataset.managerDelete);if(!t)return;
+    if(!confirm("هل تريدين حذف المعلمة «"+t.full_name+"»؟ إذا كانت مرتبطة باختبار أو تسجيل سابق فسيتم تعطيلها للحفاظ على السجلات."))return;
+    btn.disabled=true;
+    try{
+      const result=await api("admin_delete_teacher",{teacher_id:t.id});
+      const tr=await api("admin_list_teachers");teachers=tr.teachers||[];
+      await loadDashboard();await renderTeachers();renderTeacherManager();
+      status("adminStatus",result.deleted?"تم حذف المعلمة.":"تم تعطيل المعلمة للحفاظ على الاختبارات أو التسجيلات السابقة.","ok");
+    }catch(err){btn.disabled=false;status("adminStatus",readable(err),"bad");}
+  }));
+}
+async function renderTeachers() {
+  $("teacherCountStatus").textContent="عدد المعلمات المحفوظات: "+teachers.length;
+}
+
+
+/* Old-organizer style list parsing and allocation; isolated from registration records. */
+let parsedExamStudents=[], previousExamInputs=null, generatedExamGroups=[];
+function examNorm(v){return String(v||"").normalize("NFKC").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/[ًٌٍَُِّْـ]/g,"").replace(/\s+/g," ").trim().toLowerCase();}
+function examCleanName(v){const name=String(v||"").replace(/(قالون|قولون|حفص|ورش|qalun)/gi," ").replace(/[^\p{L}\p{M}\s'-]/gu," ").replace(/\s+/g," ").trim();return /\p{L}/u.test(name)?name:"";}
+function examSplitLine(raw){
+ let line=String(raw||"").trim();if(!line)return[];
+ const explicit=line.match(/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[（(]?\s*([0-9٠-٩]+)\s*[)）\]】.]?\s*\|\s*(.+)$/u);
+ if(explicit){const fields=raw.split("|").map(x=>x.trim()),student_number=scheduleDigits(explicit[1]).replace(/\s/g,""),name=examCleanName(fields[1]||""),tail=fields.slice(2).join(" "),riwayah=/قالون|قولون|qalun/i.test(tail)?"قالون":(/ورش/.test(tail)?"ورش":"حفص");return name&&student_number?[{name,student_number,riwayah,groupNo:student_number,line:raw}]:[];}
+ const group=line.match(/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[🌷🎀👑🪷🌸🌺🌼🌿]*\s*[（(]?\s*([0-9٠-٩]+)\s*[)）\]\]】.]?\s*(?:[🌷🎀👑🪷🌸🌺🌼🌿🫂/\\._\-–—*:：+]|\s)*/u);
+ const groupNo=group?scheduleDigits(group[1]).replace(/\s/g,""):"";if(group)line=line.slice(group[0].length);
+ const riwayah=/قالون|قولون/i.test(line)?"قالون":(/ورش/.test(line)?"ورش":"حفص");
+ const names=line.split(/\s*(?:🤝|❤|❤️|♥|💕|💗|💞|💓|💖|💘|💝|💟|🩷|🍒|🍭|✨|🎀|🌿|🪻|🌸|🌷|🌹|🫂|🥀|🌱|🪷|👑|➖|↔|<>|\||\/|\+|←|→)\s*/u).map(examCleanName).filter(Boolean);
+ return names.map(name=>({name,student_number:groupNo,riwayah,groupNo,line:raw}));
+}
+function parseExamStudents(){
+ parsedExamStudents=[];const lines=$("studentsInput").value.split(/\r?\n/);let started=false,lastGroup="",awaitingPartner=false,lastGroupRiwayah="حفص";
+ lines.forEach((line,i)=>{const raw=line.trim();if(!raw)return;const hasNum=/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[🌷🎀👑🪷🌸🌺🌼🌿]*\s*[（(]?\s*[0-9٠-٩]+/.test(raw);if(!started&&!hasNum)return;
+  if(hasNum){started=true;const row=examSplitLine(raw);row.forEach(x=>{x.line=i+1;parsedExamStudents.push(x)});lastGroup=row[0]?.groupNo||"";lastGroupRiwayah=row[0]?.riwayah||"حفص";awaitingPartner=!!lastGroup&&row.length===1;return;}
+  if(lastGroup&&/^(قالون|قولون|حفص|ورش)$/i.test(raw)){if(/قالون|قولون/.test(raw))lastGroupRiwayah="قالون";else if(/ورش/.test(raw))lastGroupRiwayah="ورش";parsedExamStudents.filter(x=>x.groupNo===lastGroup).forEach(x=>x.riwayah=lastGroupRiwayah);return;}
+  if(awaitingPartner&&lastGroup){const name=examCleanName(raw);if(!name){awaitingPartner=false;return;}if(!/^(المعلمة|قائمة اختبار|الاختبار|ربنا|بالتوفيق|موفقه?)$/i.test(name)){parsedExamStudents.push({name,student_number:lastGroup,riwayah:lastGroupRiwayah,groupNo:lastGroup,line:i+1});awaitingPartner=false;}}
+ });
+ const groups={};parsedExamStudents.forEach(st=>{if(st.groupNo){groups[st.groupNo]||="حفص";if(st.riwayah==="قالون")groups[st.groupNo]="قالون";else if(st.riwayah==="ورش"&&groups[st.groupNo]!=="قالون")groups[st.groupNo]="ورش";}});parsedExamStudents.forEach(st=>{if(st.groupNo)st.riwayah=groups[st.groupNo];});
+ const dup={};parsedExamStudents.forEach(st=>(dup[examNorm(st.name)]||=[]).push(st));const dups=Object.values(dup).filter(a=>a.length>1).length,q=parsedExamStudents.filter(x=>x.riwayah==="قالون").length;
+ $("studentsStats").innerHTML=parsedExamStudents.length?'<div class="stat"><b>'+parsedExamStudents.length+'</b> إجمالي الطالبات</div><div class="stat"><b>'+(parsedExamStudents.length-q)+'</b> حفص/ورش</div><div class="stat"><b>'+q+'</b> قالون</div><div class="stat"><b>'+dups+'</b> أسماء مكررة</div>':'';
+ $("studentsPreview").innerHTML=parsedExamStudents.length?'<table class="schedule-preview-table"><thead><tr><th>رقم الطالبة المشترك</th><th>اسم الطالبة</th><th>الرواية</th></tr></thead><tbody>'+parsedExamStudents.map(x=>'<tr><td>'+safe(x.student_number||"غير موجود")+'</td><td>'+safe(x.name)+'</td><td>'+safe(x.riwayah)+'</td></tr>').join("")+'</tbody></table>':'';
+ $("studentsStatus").className="status "+(parsedExamStudents.length?"ok":"bad");$("studentsStatus").textContent=parsedExamStudents.length?"تم فصل "+parsedExamStudents.length+" طالبة. الرقم قد يكون مشتركًا بين طالبتين. راجعي الأسماء والروايات قبل إنشاء القوائم.":"لم يتم فصل أي طالبة. تأكدي من ترقيم الأسطر أو وجود فاصل واضح بين الطالبتين.";if(!parsedExamStudents.length)$("studentIssues").innerHTML="";return parsedExamStudents;
+}
+function renderQalunChoices(){
+const box=$("qalunTeachers");
+  if(box.querySelector(".examQalunCheck"))savedQalunTeacherIds=new Set(selectedExamQalun());
+ if(!parsedSchedule.length){box.textContent="حللي المواعيد أولًا.";return;}
+ const seen=new Set(),list=[];
+ parsedSchedule.forEach(x=>{if(!seen.has(x.teacherId)){seen.add(x.teacherId);list.push(x)}});
+ box.innerHTML=list.map(x=>'<label class="check"><input type="checkbox" class="examQalunCheck" value="'+safe(x.teacherId)+'"><span>'+safe(x.teacherName)+'</span></label>').join("");
+box.querySelectorAll(".examQalunCheck").forEach(cb=>{cb.checked=savedQalunTeacherIds.has(cb.value);cb.addEventListener("change",()=>{savedQalunTeacherIds=new Set(selectedExamQalun());if($("examSelect").value)queueQalunAutoSave();});});
+}
+function selectedExamQalun(){return [...document.querySelectorAll(".examQalunCheck:checked")].map(x=>x.value);}
+async function saveQalunChoices(){
+ const examId=$("examSelect").value;
+ if(!examId){status("qalunSaveStatus","اختاري الاختبار أولًا.","warn");return;}
+ if(!parsedSchedule.length){status("qalunSaveStatus","حللي المواعيد أو استرجعي المواعيد المحفوظة أولًا.","warn");return;}
+ const selected=new Set(selectedExamQalun()),duration=Number($("examDuration").value)===10?10:5,grouped=new Map();
+ parsedSchedule.forEach(slot=>{const cur=grouped.get(slot.teacherId);if(!cur)grouped.set(slot.teacherId,{...slot});else{cur.start=Math.min(cur.start,slot.start);cur.end=Math.max(cur.end,slot.end);}});
+ const btn=$("saveQalunBtn");btn.disabled=true;
+ try{
+  await runLimited([...grouped.entries()],6,async([teacherId,slot])=>{
+   await api("admin_save_teacher_settings",{exam_id:examId,teacher_id:teacherId,is_available:true,accepts_qalun:selected.has(teacherId),start_time:scheduleClock(slot.start),end_time:scheduleClock(slot.end),capacity:Math.max(0,Math.floor((slot.end-slot.start)/duration)),capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:"مواعيد محفوظة من جدول الاختبار."});
+  });
+  savedQalunTeacherIds=selected;
+  await loadDashboard();await loadPublicExam();
+  status("qalunSaveStatus","تم حفظ اختيار معلمات قالون وربطه بواجهة الطالبات.","ok");
+ }catch(e){status("qalunSaveStatus",readable(e),"bad");}
+ finally{btn.disabled=false;}
+}
+$("saveQalunBtn").addEventListener("click",saveQalunChoices);
+let qalunAutoSaveChain=Promise.resolve();
+function queueQalunAutoSave(){qalunAutoSaveChain=qalunAutoSaveChain.then(()=>saveQalunChoices()).catch(e=>status("qalunSaveStatus",readable(e),"bad"));return qalunAutoSaveChain;}
+function examDuration(){return Number(document.querySelector('input[name="listDuration"]:checked')?.value||5);}
+function renderGeneratedGroups(groups,totalStudents=groups.reduce((n,g)=>n+(g.students||[]).length,0),qalunCount=null){
+  generatedExamGroups=groups||[];
+  const qalun=qalunCount===null?generatedExamGroups.reduce((n,g)=>n+(g.students||[]).filter(st=>st.riwayah==="قالون").length,0):qalunCount;
+  $("listReview").innerHTML=generatedExamGroups.length?'<div class="review"><b>مراجعة التوزيع</b><div class="stats"><div class="stat"><b>'+totalStudents+'</b> طالبة</div><div class="stat"><b>'+generatedExamGroups.length+'</b> قائمة</div><div class="stat"><b>'+qalun+'</b> قالون</div></div>'+generatedExamGroups.map(g=>'<div class="capacity-row"><span>'+safe(g.teacherName)+'</span><span>'+g.students.length+' / '+g.capacity+'</span></div>').join("")+'</div>':'';
+  $("generatedLists").innerHTML=generatedExamGroups.map(g=>{
+    const t=teachers.find(x=>x.id===g.teacherId),name=(t&&(t.full_name||t.name))||g.teacherName,blank="\n\n";
+    const contactValue=(value)=>value&&String(value).trim()?String(value).trim():"لا يوجد";
+    let output="*🌷( قائمه اختبار)🌷*"+blank;
+    output+="*المعلمة: "+name+"*"+blank;
+    output+="🕐 "+scheduleFmt(g.students[0].start)+" - "+scheduleFmt(g.students[g.students.length-1].end)+blank;
+    output+="🔢 عدد الطالبات: "+g.students.length+blank;
+    output+="•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈"+blank;
+    output+=g.students.map((st,i)=>(i+1)+") "+st.name+(st.riwayah==="قالون"?" — قالون":"")+"\n"+scheduleFmt(st.start)+" - "+scheduleFmt(st.end)).join(blank);
+    output+=blank+"•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈•"+blank;
+    output+="*المعلمه/ "+name+"*"+blank;
+    output+="*وسائل التواصل المتاحة:*"+blank;
+    output+="*اتصال*\n"+contactValue(t&&t.phone)+blank;
+    output+="▪ تليجرام\n"+contactValue(t&&t.telegram)+blank;
+    output+="▪ مسنجر\n"+contactValue(t&&t.messenger)+blank;
+    output+="▪ واتس\n"+contactValue(t&&t.whatsapp)+blank;
+    if(t&&t.notes&&String(t.notes).trim())output+=String(t.notes).trim()+blank;
+    output+="🌷 *المواعيد بتوقيت مصر*🌷"+blank;
+    output+="🌷 *برجاء الالتزام بالمواعيد*🌷"+blank;
+    output+="•┈•┈•┈•┈⊰✿✿✿✿⊱┈•┈•┈•┈";
+    return '<div class="generated-list"><h3>🌷 '+safe(name)+' — '+g.students.length+' طالبة</h3><div class="actions"><button class="soft" type="button" data-copy-list>📋 نسخ القائمة</button></div><pre>'+safe(output)+'</pre></div>';
+  }).join("");
+  $("generatedLists").querySelectorAll("[data-copy-list]").forEach(btn=>btn.addEventListener("click",async()=>{const txt=btn.closest(".generated-list").querySelector("pre").textContent;try{await navigator.clipboard.writeText(txt);btn.textContent="✓ تم النسخ"}catch(e){const area=document.createElement("textarea");area.value=txt;document.body.appendChild(area);area.select();document.execCommand("copy");area.remove();btn.textContent="✓ تم النسخ"}}));
+}
+async function generateExamLists(){
+ try{
+  if(!parsedExamStudents.length)parseExamStudents();
+  if(!parsedSchedule.length)parseSchedule();
+  if(!parsedExamStudents.length)throw new Error("الصقي قائمة الطالبات واضغطي «فصل الطالبات» أولًا.");
+  if(!parsedSchedule.length)throw new Error("الصقي مواعيد المعلمات واضغطي «تحليل المواعيد» أولًا.");
+  const examId=$("examSelect").value;
+  let regs=[];
+  if(examId){const fresh=await api("admin_dashboard",{exam_id:examId});dashboard=fresh;regs=(fresh.registrations||[]).filter(r=>["registered","confirmed","needs_review"].includes(r.status));}
+  const groupMap=new Map();
+  parsedSchedule.forEach(x=>{if(!groupMap.has(x.teacherId))groupMap.set(x.teacherId,{teacherId:x.teacherId,teacherName:x.teacherName,start:x.start,end:x.end,capacity:0,students:[]});else{const g=groupMap.get(x.teacherId);g.start=Math.min(g.start,x.start);g.end=Math.max(g.end,x.end);}});
+  const dur=examDuration(),groups=[...groupMap.values()].map(g=>({...g,capacity:Math.max(0,Math.floor((g.end-g.start)/dur)),students:[]})).filter(g=>g.capacity>0);
+  if(!groups.length)throw new Error("لا توجد سعة صالحة في المواعيد.");
+  const qids=new Set(selectedExamQalun()),qStudents=parsedExamStudents.filter(x=>x.riwayah==="قالون");
+  if(qStudents.length&&!qids.size)throw new Error("توجد طالبات قالون؛ اختاري معلمة واحدة على الأقل في قسم معلمات قالون.");
+  // إذا لم تتوفر سعة حالية لمعلمات قالون، اتركي الطالبات دون توزيع بدل إيقاف إنشاء القوائم؛ يمكن استكمالهن بعد إضافة معلمة.
+  const byTeacher=new Map(groups.map(g=>[g.teacherId,g])),used=new Set(),queues=new Map(),registered=[];
+  parsedExamStudents.forEach((st,i)=>{const k=String(st.student_number)+"|"+examNorm(st.name);if(!queues.has(k))queues.set(k,[]);queues.get(k).push({st,i});});
+  for(const reg of regs){
+   const rs=reg.student||{},queue=queues.get(String(rs.student_number||"")+"|"+examNorm(rs.student_name||"")),match=queue?.find(x=>!used.has(x.i));
+   if(!match)continue;
+   const group=byTeacher.get(reg.assigned_teacher_id);
+   if(!group)throw new Error("الطالبة المسجلة («"+match.st.name+"») اختارت معلمة غير موجودة في المواعيد الحالية. راجعي المواعيد أو التسجيل.");
+   if(match.st.riwayah==="قالون"&&!qids.has(group.teacherId))throw new Error("الطالبة («"+match.st.name+"») من قالون ومسجلة عند معلمة غير محددة لاستقبال قالون.");
+   if(group.students.length>=group.capacity)throw new Error("عدد المسجلات عند المعلمة "+group.teacherName+" أكبر من سعتها الحالية. راجعي مدة الطالبة أو وقت المعلمة.");
+   group.students.push(match.st);used.add(match.i);registered.push(match.st);
+  }
+  // ثبّتي المسجلات أولًا، ثم أضيفي غير المسجلات بترتيب القائمة الأصلية.
+  // طالبات قالون غير المسجلات يذهبن أولًا إلى المعلمات المحددات لقالون.
+  const unregistered=parsedExamStudents.map((st,i)=>({st,i})).filter(x=>!used.has(x.i));
+  const unregisteredQalun=unregistered.filter(x=>x.st.riwayah==="قالون");
+  const unregisteredNormal=unregistered.filter(x=>x.st.riwayah!=="قالون");
+  const qalunGroups=groups.filter(g=>qids.has(g.teacherId));
+  for(const item of unregisteredQalun){
+    const eligible=qalunGroups.filter(g=>g.students.length<g.capacity);
+    if(!eligible.length)continue;
+    // نختار أول معلمة قالون متاحة حسب ترتيب المواعيد، ولا نخلط ترتيب الطالبات.
+    eligible[0].students.push(item.st);
+  }
+  // احسبي توزيعًا متوازنًا أولًا، مع تثبيت المسجلات وطالبات قالون في أماكنهن.
+  // بعد حساب حصة كل معلمة، ضعي الطالبات بترتيب القائمة في كتل متتابعة.
+  const extraByTeacher=new Map(groups.map(g=>[g.teacherId,0]));
+  for(const item of unregisteredNormal){
+    const eligible=groups.filter(g=>g.students.length+(extraByTeacher.get(g.teacherId)||0)<g.capacity)
+      .sort((a,b)=>(a.students.length+(extraByTeacher.get(a.teacherId)||0))-(b.students.length+(extraByTeacher.get(b.teacherId)||0)));
+    if(!eligible.length)break;
+    const target=eligible[0];
+    extraByTeacher.set(target.teacherId,(extraByTeacher.get(target.teacherId)||0)+1);
+  }
+  let cursor=0;
+  for(const group of groups){
+    const extra=extraByTeacher.get(group.teacherId)||0;
+    for(let n=0;n<extra;n++,cursor++)group.students.push(unregisteredNormal[cursor].st);
+  }
+  groups.forEach(g=>{let t=g.start;g.students.forEach(st=>{st.start=t;st.end=t+dur;t+=dur;});});
+  generatedExamGroups=groups.filter(g=>g.students.length);renderGeneratedGroups(generatedExamGroups,parsedExamStudents.length,qStudents.length);
+  $("listGenerationStatus").className="status ok";
+  const assignedCount=generatedExamGroups.reduce((n,g)=>n+(g.students||[]).length,0),unassignedCount=Math.max(0,parsedExamStudents.length-assignedCount);
+  $("listGenerationStatus").textContent=(registered.length?"تم إنشاء "+generatedExamGroups.length+" قائمة. تم تثبيت "+registered.length+" طالبة مسجلة مع المعلمات اللاتي اخترنها، ثم توزيع غير المسجلات حسب السعة المتبقية.":"تم إنشاء القوائم وتوزيع الطالبات المتاحات حسب السعة والرواية.")+(unassignedCount?" بقيت "+unassignedCount+" طالبة دون توزيع بسبب عدم كفاية السعة؛ بياناتهن محفوظة، وأعيدي إنشاء القوائم بعد إضافة معلمة.":" تم توزيع جميع الطالبات.");
+  if(examId){const groupsToSave=generatedExamGroups.map(g=>({teacherId:g.teacherId,teacherName:g.teacherName,start:g.start,end:g.end,capacity:g.capacity,students:(g.students||[]).map(st=>({name:st.name,student_number:st.student_number,riwayah:st.riwayah,start:st.start,end:st.end}))}));try{await api("admin_save_workspace",{exam_id:examId,students_input:$("studentsInput").value,schedule_input:$("scheduleInput").value,list_duration_minutes:dur,generated_lists:groupsToSave});}catch(err){status("listGenerationStatus","تم إنشاء القوائم، لكن تعذر حفظها تلقائيًا: "+readable(err),"warn");}}
+ }catch(e){$("listGenerationStatus").className="status bad";$("listGenerationStatus").textContent=e.message;}
+}
+["studentsInput","scheduleInput"].forEach(id=>$(id).addEventListener("focus",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};}));
+async function syncParsedStudentsToExam(){const examId=$("examSelect").value;if(!examId){status("studentsStatus","احفظي بيانات الاختبار واختاريه أولًا قبل ربط القائمة بواجهة الطالبات.","warn");return;}if(!parsedExamStudents.length)return;const missing=parsedExamStudents.filter(x=>!x.student_number);if(missing.length){status("studentsStatus","فيه "+missing.length+" طالبة لم أستطع تحديد رقمها من القائمة. راجعي ترقيمها قبل الحفظ.","warn");return;}try{const students=parsedExamStudents.map(x=>({student_number:x.student_number,student_name:x.name,riwaya:/قالون/.test(x.riwayah)?"qalun":"hafs"}));const result=await api("admin_import_students",{exam_id:examId,students});status("studentsStatus","تم تحليل "+parsedExamStudents.length+" طالبة وحفظ "+result.saved+" سجلًا. الأرقام المشتركة مدعومة الآن.","ok");if(generatedExamGroups.length){await generateExamLists();if($("listGenerationStatus").classList.contains("bad"))status("studentsStatus","تم حفظ قائمة الطالبات، لكن تعذر تحديث القوائم تلقائيًا: "+$("listGenerationStatus").textContent,"warn");else status("studentsStatus","تم تحديث بيانات الطالبات وإعادة إنشاء القوائم تلقائيًا وفق أحدث قائمة ومواعيد محفوظة.","ok");}await loadDashboard();}catch(e){status("studentsStatus","تم التحليل لكن تعذر ربط القائمة بواجهة الطالبات: "+readable(e),"bad");}}
+$("parseStudentsBtn").addEventListener("click",async()=>{
+  parseExamStudents();
+  if(!parsedExamStudents.length)return;
+  if(!$("examSelect").value){status("studentsStatus","تم تحليل القائمة. احفظي بيانات الاختبار من زر الحفظ أسفل الصفحة لربطها بواجهة الطالبات.","ok");return;}
+  await syncParsedStudentsToExam();
+});
+$("toggleStudentNames").addEventListener("click",()=>{
+ const box=$("studentsPreview"),btn=$("toggleStudentNames"),show=box.classList.contains("hidden");
+ box.classList.toggle("hidden",!show);btn.setAttribute("aria-expanded",String(show));
+ btn.textContent=show?"🙈 إخفاء أسماء الطالبات":"👁️ إظهار أسماء الطالبات";
+});
+$("clearStudentsBtn").addEventListener("click",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};$("studentsInput").value="";parsedExamStudents=[];$("studentsStatus").textContent="";$("studentsStats").innerHTML="";$("studentsPreview").innerHTML="";$("studentsPreview").classList.add("hidden");$("toggleStudentNames").textContent="👁️ إظهار أسماء الطالبات";$("toggleStudentNames").setAttribute("aria-expanded","false");$("studentIssues").innerHTML="";$("generatedLists").innerHTML="";$("listReview").innerHTML="";$("listGenerationStatus").textContent="";});
+$("undoInputsBtn").addEventListener("click",()=>{if(!previousExamInputs){status("studentsStatus","لا يوجد تعديل سابق محفوظ للتراجع إليه.","bad");return;}$("studentsInput").value=previousExamInputs.students;$("scheduleInput").value=previousExamInputs.schedule;parseExamStudents();parseSchedule();});
+$("undoScheduleBtn").addEventListener("click",()=>{if(previousExamInputs){$("scheduleInput").value=previousExamInputs.schedule;parseSchedule();}else status("scheduleStatus","لا يوجد تعديل سابق محفوظ للتراجع إليه.","bad");});
+$("selectAllQalunBtn").addEventListener("click",()=>{document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=true);if($("examSelect").value)queueQalunAutoSave();});
+$("clearQalunBtn").addEventListener("click",()=>{document.querySelectorAll(".examQalunCheck").forEach(x=>x.checked=false);if($("examSelect").value)queueQalunAutoSave();});
+$("generateListsBtn").addEventListener("click",generateExamLists);
+document.querySelectorAll('input[name="listDuration"]').forEach(r=>r.addEventListener("change",()=>{ $("examDuration").value=r.value; if(parsedSchedule.length)renderParsedSchedule(); }));
+
+
+let parsedSchedule=[],scheduleIssues=[],savedQalunTeacherIds=new Set(),workspaceLoadedExamId="";
+function scheduleNorm(s){
+  return String(s||"").normalize("NFKC").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي")
+    .replace(/[ًٌٍَُِّْـ]/g,"").replace(/\s+/g," ").trim().toLowerCase();
+}
+function scheduleDigits(s){return String(s||"").replace(/[٠-٩]/g,x=>"٠١٢٣٤٥٦٧٨٩".indexOf(x));}
+function matchScheduleTeacher(line){
+  const n=scheduleNorm(line);
+  const active=teachers.filter(t=>t.is_active!==false).map(t=>({...t,name:t.full_name||t.name||""}));
+  const exact=active.filter(t=>n.includes(scheduleNorm(t.name))).sort((a,b)=>scheduleNorm(b.name).length-scheduleNorm(a.name).length);
+  if(exact.length)return exact[0];
+  let pref=[],longest=1;
+  for(const t of active){
+    const parts=scheduleNorm(t.name).split(" ").filter(Boolean);
+    for(let count=2;count<=parts.length;count++){
+      if(n.includes(parts.slice(0,count).join(" "))){
+        if(count>longest){longest=count;pref=[t];}
+        else if(count===longest&&!pref.some(x=>x.id===t.id))pref.push(t);
+      }
+    }
+  }
+  if(pref.length===1)return pref[0];
+  if(pref.length>1)return {ambiguous:true,names:pref.map(t=>t.name)};
+  const first=active.filter(t=>{
+    const f=scheduleNorm(t.name).split(" ")[0];
+    return f && new RegExp("(^|\\s|[-–—])"+f+"($|\\s|[-–—])").test(n);
+  });
+  if(first.length===1)return first[0];
+  if(first.length>1)return {ambiguous:true,names:first.map(t=>t.name)};
+  const words=n.split(/\s+/).filter(w=>w.length>=3);
+  function lev(a,b){let d=Array.from({length:b.length+1},(_,i)=>i);for(let i=0;i<a.length;i++){let nd=[i+1];for(let j=0;j<b.length;j++)nd.push(Math.min(nd[j]+1,d[j+1]+1,d[j]+(a[i]===b[j]?0:1)));d=nd;}return d[b.length];}
+  let best=[],min=99;
+  for(const t of active){const f=scheduleNorm(t.name).split(" ")[0];for(const w of words){const dist=lev(w,f);if(dist<min){min=dist;best=[t];}else if(dist===min&&!best.some(x=>x.id===t.id))best.push(t);}}
+  if(min<=1&&best.length===1)return best[0];
+  if(min<=1&&best.length>1)return {ambiguous:true,names:best.map(t=>t.name)};
+  return null;
+}
+function meridiemKind(p){
+  p=String(p||"").toLowerCase().replace(/[ًٌٍَُِّْ]/g,"").trim();
+  if(!p)return "";
+  if(/^(ص|صباح|صباحا|am)$/.test(p))return "am";
+  /* ظ/ظهر/ع/عصر/م/مساء/ل/ليل كلها تُعامل كمساء */
+  if(/^(م|مساء|مساءا|ظ|ظهرا|ظهر|ع|عصرا|عصر|ز|ليلا|ليل|pm)$/.test(p))return "pm";
+  return "";
+}
+function timeToMin(v,p){
+  v=scheduleDigits(String(v||"")).trim();
+  let m=v.match(/^(\d{1,2})(?:\.(\d{1,2}))?$/);
+  if(!m)return null;
+  let h=+m[1],mi=m[2]?((m[2]==="5")?30:+m[2]):0;
+  let k=meridiemKind(p);
+  if(k==="pm"&&h<12)h+=12;
+  if(k==="am"&&h===12)h=0;
+  if(h>23||mi>59)return null;
+  return h*60+mi;
+}
+function oldScheduleFmt(x){
+  x=((x%1440)+1440)%1440;let h=Math.floor(x/60),m=x%60,s=h>=12?"م":"ص",hh=h%12||12;
+  return String(hh).padStart(2,"0")+":"+String(m).padStart(2,"0")+" "+s;
+}
+function schedulePeriod(text){
+  /*
+    قواعد المواعيد:
+    - رقم واحد مثل 9 = من 9 إلى 10.
+    - 9.30 = 9:30 (نصف ساعة)، وكذلك ٩٫٣٠.
+    - وجود : بين رقمين في رسائل المعلمات يعني مدى زمني: 8:10 = 8 إلى 10، وليس 8:10 دقيقة.
+    - 9 : 10 ص = 9 إلى 10 صباحًا.
+    - 5 إلى 6 م = 5 إلى 6 مساءً.
+    - ص = صباحًا.
+    - م/ظ/ع/ز/ظهر/عصر/مساء/ليل/PM = مساءً.
+  */
+  let raw=String(text||"")
+    .replace(/[ًٌٍَُِّْ]/g,"")
+    .replace(/(\d)\s*[،,]\s*(\d{1,2})(?=\s*(?:صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm|$))/gi,"$1.$2")
+    .replace(/[،,]/g," ")
+    .replace(/[٫٬]/g,".")
+    .replace(/[–—−]/g,"-")
+    .replace(/[–—−]/g,"-")
+    .trim();
+  raw=scheduleDigits(raw);
+  /* Normalize Arabic meridiem markers to AM/PM before parsing. JavaScript's
+     \\b word boundary does not work reliably after Arabic letters (ص/م/ظ),
+     which caused 3:00 ظ and 7:00 م to be read as morning. */
+  raw=raw
+    .replace(/(\d)(\s*)(صباح(?:ا|ً)?|ص)(?=\s|$)/gi,"$1 AM")
+    .replace(/(\d)(\s*)(مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|م|ظ|ع|ز)(?=\s|$)/gi,"$1 PM");
+  /* مدى مباشر بالنقطة أو النقطتين: 8.10 / ٨.١٠ / 8..10 / ٨..١٠ */
+  const dotRange=/(?:^|\s)(\d{1,2})\s*\.\s*\.?\s*(\d{1,2})\s*(صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)?(?=\s*$)/i;
+  let dr=raw.match(dotRange);
+  if(dr && dr[2]!=="00" && dr[2]!=="30"){
+    let ds=dr[3]||"";
+    let da=timeToMin(dr[1],ds), db=timeToMin(dr[2],ds);
+    if(da!==null&&db!==null){
+      if(db<=da && ds && meridiemKind(ds)==="pm" && +dr[1]<12) da=timeToMin(dr[1],"ص");
+      if(db<=da) db+=1440;
+      return {start:da,end:db,explicit:true};
+    }
+  }
+  /* المدى بالنقطة: 8.10 أو ٨.١٠ = من 8 إلى 10، وكذلك 8..10. */
+  raw=raw.replace(/(\d{1,2})\s*\.\s*\.\s*(\d{1,2})/g,"$1-$2");
+  raw=raw.replace(/\b(\d{1,2})\s*\.\s*(\d{1,2})(?=\s*(?:صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm|$))/gi,(m,a,b)=>((b==="00"||b==="30")?m:(a+"-"+b)));
+  /* 11.5 بعد النقطتين تعني 11:30، مثل 10:11.5 و ١٠:١١.٥. */
+  raw=raw.replace(/(\d{1,2})\s*:\s*(\d{1,2})\s*\.\s*5/g,"$1:$2.30");
+  /* صيغ شائعة مثل ٩ ونص / ١٠ونصف / ٨ و نصف تعني :30. */
+  raw=raw.replace(/(\d{1,2})\s*و\s*(?:نص|نصف)/g,"$1.30");
+  /* صيغ الساعة والنصف المكتوبة متصلة: 3.30 عصرا / ٣.٣٠عصرا / 3.30م */
+  raw=raw.replace(/(\d{1,2})\s*[.٫]\s*30(?=\s*(?:صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)\b)/gi,"$1.30");
+
+  const P="(?:صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)";
+  const NUM="(\\d{1,2}(?:\\s*\\.\\s*(?:00|30))?)";
+
+  /* أولًا: المدى المكتوب بالنقطتين أو إلى/حتى/الشرطة.
+     النقطتان هنا مقصودهما 9:10 = 9 إلى 10، لا 9:10 دقيقة. */
+    /* 11:30 و10:00 = وقت بالساعة والدقائق. أما 9:10 و8:10 فمدى زمني. */
+  const clockColon=/\b(\d{1,2})\s*:\s*(00|30)\s*(صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)?\b/i;
+  let cm=raw.match(clockColon);
+  if(cm){
+    let a=timeToMin(cm[1]+"."+cm[2],cm[3]||"");
+    if(a!==null)return {start:a,end:a+60,explicit:false};
+  }
+
+const COLONNUM="(\\d{1,2}(?:\\s*[.\\u066b]\\s*(?:00|30|[0-5]?\\d))?)";
+       const colonHalfRange=/\b(\d{1,2})\s*:\s*(\d{1,2})\s*\.\s*5\s*(صباح(?:ا|ً)?|مساء(?:ا|ً)?|ظهر(?:ا|ً)?|عصر(?:ا|ً)?|ليل(?:ا|ً)?|ص|م|ظ|ع|ز|am|pm)?\b/i;
+  let ch=raw.match(colonHalfRange);
+  if(ch){
+    let suffix=ch[3]||"";
+    let a=timeToMin(ch[1],suffix);
+    let b=timeToMin(ch[2]+".30",suffix);
+    if(a!==null&&b!==null){
+      if(b<=a && suffix && meridiemKind(suffix)==="pm" && +ch[1]<12) a=timeToMin(ch[1],"ص");
+      if(b<=a)b+=1440;
+      return {start:a,end:b,explicit:true};
+    }
+  }
+
+const colonRange=new RegExp(COLONNUM+"\\s*:\\s*"+COLONNUM+"\\s*("+P+")?","i");
+  let m=raw.match(colonRange);
+  if(m){
+    let suffix=m[3]||"";
+    /* إذا كانت الدلالة مكتوبة مرة واحدة بعد المدى، فهي للوقتَين معًا. */
+    let a=timeToMin(m[1].replace(/\s/g,""),suffix);
+    let b=timeToMin(m[2].replace(/\s/g,""),suffix);
+    if(a!==null&&b!==null){
+      /* حالة مثل 10:8 م: إذا كان وقت البداية بلا دلالة والـPM عند النهاية،
+         فالأقرب المقصود 10 صباحًا إلى 8 مساءً، لا 10 مساءً إلى 8 مساءً في اليوم التالي. */
+      if(b<=a && suffix && meridiemKind(suffix)==="pm" && !m[1].includes("ص")){
+        let rawA=+m[1].replace(/\s/g,"").split(".")[0];
+        let amStart=timeToMin(String(rawA),"ص");
+        if(amStart!==null && b>amStart){a=amStart;}
+      }
+      if(b<=a)b+=1440;
+      return {start:a,end:b,explicit:true};
+    }
+  }
+
+  const rangeRe=new RegExp(
+    NUM+"\\s*("+P+")?\\s*(?:إلى|الى|الي|حتى|من|ل|-)\\s*"+
+    NUM+"\\s*("+P+")?","i"
+  );
+  m=raw.match(rangeRe);
+  if(m){
+    let p1=m[2]||"",p2=m[4]||p1;
+    /* إذا كانت الدلالة موجودة بعد النهاية فقط مثل 5 إلى 6 عصرا،
+       فهي تخص البداية والنهاية معًا. */
+    if(!m[2] && m[4])p1=m[4];
+    let a=timeToMin(m[1].replace(/\s/g,""),p1);
+    let b=timeToMin(m[3].replace(/\s/g,""),p2);
+    if(a!==null&&b!==null){
+      if(b<=a){
+        /* لو كتب 10 - 8 م فالمقصود عادة 10 صباحًا إلى 8 مساءً،
+           لأن الدلالة المسائية موجودة عند النهاية فقط. */
+        if(!m[2] && m[4] && meridiemKind(m[4])==="pm" && a<12*60) a=timeToMin(m[1].replace(/\s/g,""),"ص");
+        if(b<=a)b+=1440;
+      }
+      return {start:a,end:b,explicit:true};
+    }
+  }
+
+  /* وقت واحد: 9 أو 9.30 أو ٩٫٣٠ أو 9 ونص = ساعة واحدة كاملة. */
+  const halfRe=new RegExp("(?:^|[^0-9])"+NUM+"\\s*(?:و\\s*نص|ونص|و\\s*نصف|ونصف)?\\s*("+P+")?(?=$|[^0-9])","i");
+  m=raw.match(halfRe);
+  if(m){
+    let val=m[1].replace(/\s/g,"");
+    let a=timeToMin(val,m[2]||"");
+    if(a!==null)return {start:a,end:a+60,explicit:false};
+  }
+  return null;
+}
+
+function scheduleExtractTeacherTime(text, teacherName){
+  let raw=String(text||'');
+  let nraw=scheduleNorm(raw);
+  let tn=scheduleNorm(teacherName||'');
+  let rest='';
+
+  /* نبحث عن اسم المعلمة داخل نفس السطر، مع السماح بأن يكون قبله رقم/شرطة/شرطة سفلية،
+     أو أن يكون الاسم مكتوبًا مختصرًا (الاسم الأول فقط). ثم نقرأ الوقت بعد الاسم فقط. */
+  if(tn && nraw.includes(tn)){
+    let pos=nraw.indexOf(tn);
+    rest=raw.slice(pos + teacherName.length);
+  }else if(tn){
+    let first=scheduleNorm((teacherName||'').trim().split(/\s+/)[0]);
+    if(first && nraw.includes(first)){
+      let pos=nraw.indexOf(first);
+      rest=raw.slice(pos + (teacherName.trim().split(/\s+/)[0]||'').length);
+    }
+  }
+
+  /* إزالة أي بقايا فاصل/رقم ترتيب بين الاسم والوقت. */
+  rest=rest.replace(/^[\s\-–—_./\\:：*#()（）]+/,'').trim();
+  return schedulePeriod(rest);
+}
+
+function scheduleFmt(min){
+  min=((min%1440)+1440)%1440;
+  const h=Math.floor(min/60),m=min%60;
+  return String(h%12||12).padStart(2,"0")+":"+String(m).padStart(2,"0")+" "+(h>=12?"م":"ص");
+}
+function scheduleClock(min){
+  min=((min%1440)+1440)%1440;
+  return String(Math.floor(min/60)).padStart(2,"0")+":"+String(min%60).padStart(2,"0");
+}
+function parseSchedule(){
+  parsedSchedule=[];scheduleIssues=[];
+  const lines=$("scheduleInput").value.split(/\r?\n/).map(x=>x.trim());
+  let started=false;
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];if(!line)continue;
+    if(/^\s*[\(（]?\s*[0-9٠-٩]+\s*[\)）]?\s*[-_./\\:：]*\s*$/.test(line))continue;
+    const t=matchScheduleTeacher(line);
+    let period=null,consumedNextLine=false;
+    if(t&&!t.ambiguous){
+      period=scheduleExtractTeacherTime(line,t.name);
+      if(!period)period=scheduleExtractTeacherTime(line,(t.name||"").trim().split(/\s+/)[0]);
+      if(!period&&i+1<lines.length){
+        const nextTeacher=matchScheduleTeacher(lines[i+1]);
+        if(!nextTeacher){
+          period=schedulePeriod(lines[i+1]);
+          if(period)consumedNextLine=true;
+        }
+      }
+    }
+    if(!started){if(!t||!period||t.ambiguous)continue;started=true;}
+    else{
+      if(!t){
+        if(/\b(?:[0-9٠-٩]{1,2}(?:[.:،][0-9٠-٩]{1,2})?|\d{1,2}\s*(?:ونص|ونصف))\b/.test(line)&&!/^(?:[-_*🌷💕\s]|[0-9٠-٩])+$/.test(line)){
+          scheduleIssues.push({line:i,text:line,reason:"يوجد وقت في السطر لكن لم أتعرف على اسم المعلمة."});
+        }
+        continue;
+      }
+      if(!period){scheduleIssues.push({line:i,text:line,reason:"تعرفت على المعلمة لكن لم أفهم وقتها."});continue;}
+    }
+    if(t.ambiguous){scheduleIssues.push({line:i,text:line,reason:"اسم المعلمة مطابق لأكثر من قالب."});continue;}
+    let start=period.start,end=period.end;
+    if(end-start<60)end=start+60;
+    if(end-start>120)end=start+120;
+    parsedSchedule.push({teacherId:t.id,teacherName:t.name,start,end,sourceLine:line});
+    if(consumedNextLine)i++;
+  }
+  renderParsedSchedule();
+}
+function renderScheduleIssues(){
+ const box=$("scheduleIssues");
+ if(!scheduleIssues.length){box.innerHTML="";return;}
+ const options=teachers.filter(t=>t.is_active!==false).map(t=>'<option value="'+safe(t.id)+'">'+safe(t.full_name||t.name||"")+'</option>').join("");
+ box.innerHTML='<div class="review"><b>⚠️ سطور تحتاج مراجعة</b><div class="hint">يمكنك تعديل السطر وإعادة تحليله، أو اختيار المعلمة وتحديد الوقت يدويًا، أو تجاهل السطر إذا لم يكن موعدًا مطلوبًا.</div>'+scheduleIssues.map((it,k)=>'<div class="schedule-issue"><b>السطر '+(it.line+1)+'</b><div>'+safe(it.text)+'</div><div class="hint">'+safe(it.reason)+'</div><label class="hint" for="scheduleTeacherFix_'+k+'">اختيار المعلمة الصحيحة (اختياري)</label><select id="scheduleTeacherFix_'+k+'"><option value="">— اختاري معلمة —</option>'+options+'</select><input id="scheduleFix_'+k+'" value="'+safe(it.text)+'" placeholder="أو اكتبي السطر الصحيح كاملًا"><div class="manual-time"><span class="hint">⏰ أو حددي الوقت يدويًا:</span><input id="scheduleStart_'+k+'" type="time" title="بداية الموعد"><span>إلى</span><input id="scheduleEnd_'+k+'" type="time" title="نهاية الموعد"><button type="button" class="green" data-schedule-time="'+k+'">⏰ اعتماد الوقت</button></div><div class="actions"><button type="button" class="green" data-schedule-fix="'+k+'">✏️ تعديل وإعادة التحليل</button><button type="button" class="gray" data-schedule-ignore="'+k+'">🗑️ تجاهل السطر</button></div></div>').join("")+'</div>';
+ box.querySelectorAll("[data-schedule-fix]").forEach(btn=>btn.addEventListener("click",()=>fixScheduleIssue(Number(btn.dataset.scheduleFix))));
+ box.querySelectorAll("[data-schedule-time]").forEach(btn=>btn.addEventListener("click",()=>fixScheduleIssueWithTime(Number(btn.dataset.scheduleTime))));
+ box.querySelectorAll("[data-schedule-ignore]").forEach(btn=>btn.addEventListener("click",()=>ignoreScheduleIssue(Number(btn.dataset.scheduleIgnore))));
+}
+function fixScheduleIssue(k){
+ const it=scheduleIssues[k];if(!it)return;
+ const input=$("scheduleFix_"+k),select=$("scheduleTeacherFix_"+k);let value=input?.value??"",teacherId=select?.value||"";
+ if(teacherId){const teacher=teachers.find(t=>String(t.id)===String(teacherId));if(teacher){const old=it.text,full=teacher.full_name||teacher.name||"";let replaced=false;for(const candidate of teachers){const name=candidate.full_name||candidate.name||"";if(name&&old.includes(name)){value=old.replace(name,full);replaced=true;break;}}if(!replaced){const m=old.match(/^(\s*[0-9٠-٩]+\s*[-_/.)：:*]*\s*)/);value=(m?m[1]:"")+full+" "+old.slice(m?m[0].length:0).trim();}}}
+ const rows=$("scheduleInput").value.split(/\r?\n/);rows[it.line]=value;$("scheduleInput").value=rows.join("\n");parseSchedule();
+}
+function fixScheduleIssueWithTime(k){
+ const it=scheduleIssues[k];if(!it)return;const start=$("scheduleStart_"+k)?.value||"",end=$("scheduleEnd_"+k)?.value||"",teacherId=$("scheduleTeacherFix_"+k)?.value||"";
+ if(!start||!end){status("scheduleStatus","حددي وقت البداية ووقت النهاية أولًا.","warn");return;}if(!teacherId){status("scheduleStatus","اختاري المعلمة الصحيحة أولًا.","warn");return;}
+ const teacher=teachers.find(t=>String(t.id)===String(teacherId));if(!teacher)return;const toArabicTime=v=>{const p=v.split(":").map(Number);return scheduleFmt(p[0]*60+p[1]);};
+ const rows=$("scheduleInput").value.split(/\r?\n/);const prefix=it.text.match(/^\s*[\*🎀👑🌷🪷🌸🌺🌼]*\s*[（(]?\s*[0-9٠-٩]+\s*[)）.]?\s*/u);rows[it.line]=(prefix?prefix[0]:"")+(teacher.full_name||teacher.name)+" "+toArabicTime(start)+" - "+toArabicTime(end);$("scheduleInput").value=rows.join("\n");parseSchedule();
+}
+function ignoreScheduleIssue(k){const it=scheduleIssues[k];if(!it)return;const rows=$("scheduleInput").value.split(/\r?\n/);rows[it.line]="";$("scheduleInput").value=rows.join("\n");parseSchedule();}
+
+
+function renderParsedSchedule(){
+  renderQalunChoices();
+  const unique=new Set(parsedSchedule.map(x=>x.teacherId)),total=parsedSchedule.reduce((a,x)=>a+x.end-x.start,0),duration=Number($("examDuration").value)||5;
+  $("scheduleStats").innerHTML=parsedSchedule.length?'<div class="stat"><b>'+parsedSchedule.length+'</b> موعد مقروء</div><div class="stat"><b>'+unique.size+'</b> معلمة</div><div class="stat"><b>'+Math.floor(total/60)+'س '+(total%60?total%60+'د':'')+'</b> إجمالي الوقت</div><div class="stat"><b>'+parsedSchedule.reduce((a,x)=>a+Math.floor((x.end-x.start)/duration),0)+'</b> سعة تقريبية</div>':'';
+renderScheduleIssues();
+  $("schedulePreview").innerHTML=parsedSchedule.length?'<table class="schedule-preview-table"><thead><tr><th>المعلمة</th><th>من</th><th>إلى</th><th>السعة</th></tr></thead><tbody>'+parsedSchedule.map(x=>'<tr><td>'+safe(x.teacherName)+'</td><td>'+scheduleFmt(x.start)+'</td><td>'+scheduleFmt(x.end)+'</td><td>'+Math.floor((x.end-x.start)/duration)+'</td></tr>').join('')+'</tbody></table>':'';
+  $("saveScheduleBtn").disabled=!parsedSchedule.length||!$("examSelect").value;
+  if(!parsedSchedule.length)status("scheduleStatus","لم أتعرف على أي موعد صالح. تأكدي أن أسماء المعلمات موجودة في قائمة المعلمات المحفوظة.","bad");
+  else if(scheduleIssues.length)status("scheduleStatus","تم تحليل "+parsedSchedule.length+" موعد، لكن هناك "+scheduleIssues.length+" سطر يحتاج مراجعة قبل الحفظ.","warn");
+  else status("scheduleStatus","تم تحليل المواعيد بنجاح. راجعي الجدول، وسيتم حفظ المواعيد عند الضغط على «حفظ بيانات الاختبار».","ok");
+}
+$("parseScheduleBtn").addEventListener("click",()=>{parseSchedule();});
+$("clearScheduleBtn").addEventListener("click",()=>{previousExamInputs={students:$("studentsInput").value,schedule:$("scheduleInput").value};$("scheduleInput").value="";parsedSchedule=[];scheduleIssues=[];$("scheduleStats").innerHTML="";$("schedulePreview").innerHTML="";$("scheduleIssues").innerHTML="";renderQalunChoices();$("saveScheduleBtn").disabled=true;$("scheduleStatus").className="status";$("scheduleStatus").textContent="";});
+$("saveScheduleBtn").addEventListener("click",async()=>{
+  const examId=$("examSelect").value;if(!examId){status("scheduleStatus","احفظي بيانات الاختبار أولًا ثم اختاريه من قائمة الاختبارات.","bad");return;}if(!parsedSchedule.length)return;
+  const btn=$("saveScheduleBtn");btn.disabled=true;btn.textContent="جارٍ حفظ المواعيد...";
+  try{
+    if(scheduleIssues.length&&!confirm("فيه "+scheduleIssues.length+" سطر محتاج مراجعة. لو حفظتي الآن، المعلمات اللي لم يتم التعرف عليهن لن تُدرج مواعيدهن. هل تريدين الاستمرار؟"))return;
+    const grouped=new Map();for(const slot of parsedSchedule){const current=grouped.get(slot.teacherId);if(!current)grouped.set(slot.teacherId,{...slot});else{current.start=Math.min(current.start,slot.start);current.end=Math.max(current.end,slot.end);current.sourceLine+=" / "+slot.sourceLine;}}
+    const duration=Number($("examDuration").value)===10?10:5;
+    await runLimited(teachers.filter(t=>t.is_active!==false),6,async teacher=>{
+      const slot=grouped.get(teacher.id);
+      if(slot){
+        await api("admin_save_teacher_settings",{exam_id:examId,teacher_id:teacher.id,is_available:true,accepts_qalun:selectedExamQalun().includes(teacher.id),start_time:scheduleClock(slot.start),end_time:scheduleClock(slot.end),capacity:Math.max(0,Math.floor((slot.end-slot.start)/duration)),capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:("مستخرج تلقائيًا من رسالة المواعيد: "+slot.sourceLine).slice(0,1000)});
+      }else{
+        await api("admin_save_teacher_settings",{exam_id:examId,teacher_id:teacher.id,is_available:false,accepts_qalun:false,start_time:null,end_time:null,capacity:0,capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:"لم تظهر هذه المعلمة في رسالة مواعيد الاختبار."});
+      }
+    });
+    savedQalunTeacherIds=new Set(selectedExamQalun());
+     await loadDashboard();await loadPublicExam();status("scheduleStatus","تم حفظ المواعيد لـ "+grouped.size+" معلمة، واستبعاد "+(teachers.filter(t=>t.is_active!==false).length-grouped.size)+" معلمة غير مذكورة في الرسالة. السعة محسوبة تلقائيًا.","ok");status("adminStatus","تم حفظ بيانات الاختبار ومواعيد المعلمات.","ok");
+  }catch(err){status("scheduleStatus",readable(err),"bad");}
+  finally{btn.disabled=!parsedSchedule.length;btn.textContent="💾 حفظ مواعيد الاختبار";}
+});
+
+async function saveAllExamWorkspace(publish=false){
+ const btn=publish?$("publishExamBtn"):$("saveAllWorkspaceBtn"),originalText=btn.textContent;btn.disabled=true;btn.textContent=publish?"جارٍ حفظ البيانات ونشر الاختبار...":"جارٍ حفظ بيانات الاختبار...";
+ const locked=[...document.querySelectorAll('#examSelect,#examTitle,#examDate,#examDuration,#registrationState,#examInstructions,#studentsInput,#scheduleInput,input[name="listDuration"],.examQalunCheck')],previous=locked.map(el=>el.disabled);locked.forEach(el=>el.disabled=true);
+ let saveStage="التحقق من بيانات الطالبات والمواعيد",regenerateListsAfterSave=false;
+ try{
+  const existingQalunControls=document.querySelectorAll(".examQalunCheck").length>0;
+  const selectedQalunBeforeSave=new Set(existingQalunControls?selectedExamQalun():savedQalunTeacherIds);
+  parseExamStudents();parseSchedule();
+  document.querySelectorAll(".examQalunCheck").forEach(cb=>{cb.checked=selectedQalunBeforeSave.has(cb.value);});
+  if(!parsedExamStudents.length)throw new Error("الصقي قائمة الطالبات أولًا.");
+  if(parsedExamStudents.some(x=>!x.student_number))throw new Error("فيه طالبة بدون رقم واضح. راجعي القائمة قبل الحفظ.");
+  if(!parsedSchedule.length)throw new Error("الصقي رسالة مواعيد المعلمات واضغطي «تحليل المواعيد» أولًا.");
+  const capacityDuration=Number(document.querySelector('input[name="listDuration"]:checked')?.value||5)===10?10:5;
+  const capacityByTeacher=new Map();
+  parsedSchedule.forEach(slot=>{const current=capacityByTeacher.get(slot.teacherId);if(!current)capacityByTeacher.set(slot.teacherId,{start:slot.start,end:slot.end});else{current.start=Math.min(current.start,slot.start);current.end=Math.max(current.end,slot.end);}});
+  const totalCapacity=[...capacityByTeacher.values()].reduce((sum,slot)=>sum+Math.max(0,Math.floor((slot.end-slot.start)/capacityDuration)),0);
+  if(totalCapacity<parsedExamStudents.length&&!allowUnderCapacitySaveOnce){pendingCapacitySave=publish;$("capacityChoiceMessage").textContent="عدد الطالبات: "+parsedExamStudents.length+" — السعة الحالية: "+totalCapacity+" — المتبقي دون سعة: "+(parsedExamStudents.length-totalCapacity)+" طالبة."; $("capacityChoiceModal").classList.remove("hidden");return;} allowUnderCapacitySaveOnce=false; $("capacityChoiceModal").classList.add("hidden"); pendingCapacitySave=null;
+  if(scheduleIssues.length&&!confirm("فيه "+scheduleIssues.length+" سطر في رسالة المواعيد يحتاج مراجعة. سيتم حفظ المواعيد التي تم التعرف عليها فقط. هل تريدين الاستمرار؟"))return;
+  const examId=$("editExamId").value,duration=Number(document.querySelector('input[name="listDuration"]:checked')?.value||5)===10?10:5,oldStatus=examId?(exams.find(x=>x.id===examId)?.status||"draft"):"draft";
+  // إذا كانت القوائم قد أُنشئت بالفعل، فأعيدي إنشاءها بعد كل حفظ باستخدام أحدث بيانات الطالبات والمواعيد والمدة، وليس المواعيد فقط.
+  regenerateListsAfterSave=generatedExamGroups.length>0;
+  saveStage="حفظ بيانات الاختبار";
+  const saved=await api("admin_save_exam",{exam_id:examId||undefined,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:oldStatus,registration_state:$("registrationState").value,instructions:$("examInstructions").value});
+  const id=saved.exam.id;$("examSelect").value=id;$("editExamId").value=id;exams=[saved.exam,...exams.filter(x=>x.id!==id)];
+  const students=parsedExamStudents.map(x=>({student_number:String(x.student_number),student_name:x.name,riwaya:/قالون/.test(x.riwayah)?"qalun":"hafs"}));
+  const qids=new Set(selectedExamQalun()),grouped=new Map();parsedSchedule.forEach(slot=>{const cur=grouped.get(slot.teacherId);if(!cur)grouped.set(slot.teacherId,{...slot});else{cur.start=Math.min(cur.start,slot.start);cur.end=Math.max(cur.end,slot.end);cur.sourceLine+=" / "+slot.sourceLine;}});
+  const teacherSettingsPayload=teachers.filter(t=>t.is_active!==false).map(teacher=>{const slot=grouped.get(teacher.id);return slot?{teacher_id:teacher.id,is_available:true,accepts_qalun:qids.has(teacher.id),start_time:scheduleClock(slot.start),end_time:scheduleClock(slot.end),capacity:Math.max(0,Math.floor((slot.end-slot.start)/duration)),capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:("مستخرج تلقائيًا من رسالة المواعيد: "+slot.sourceLine).slice(0,1000)}:{teacher_id:teacher.id,is_available:false,accepts_qalun:false,start_time:null,end_time:null,capacity:0,capacity_override:null,capacity_override_reason:null,duration_minutes:duration,notes:"لم تظهر هذه المعلمة في رسالة مواعيد الاختبار."};});
+  const groupsToSave=generatedExamGroups.map(g=>({teacherId:g.teacherId,teacherName:g.teacherName,start:g.start,end:g.end,capacity:g.capacity,students:(g.students||[]).map(st=>({name:st.name,student_number:st.student_number,riwayah:st.riwayah,start:st.start,end:st.end}))}));
+  saveStage="حفظ قائمة الطالبات والمواعيد وبيانات مساحة العمل";
+  const saveResults=await Promise.allSettled([
+    api("admin_import_students",{exam_id:id,students}),
+    api("admin_save_teacher_settings_bulk",{exam_id:id,settings:teacherSettingsPayload}),
+    api("admin_save_workspace",{exam_id:id,students_input:$("studentsInput").value,schedule_input:$("scheduleInput").value,list_duration_minutes:duration,generated_lists:groupsToSave})
+  ]);
+  const failedSave=saveResults.find(result=>result.status==="rejected");
+  if(failedSave)throw failedSave.reason;
+  const imported=saveResults[0].value;
+  saveStage=publish?"تأكيد نشر الاختبار":"تأكيد حفظ بيانات الاختبار";
+  const finalExam=publish?(await api("admin_save_exam",{exam_id:id,title:$("examTitle").value.trim(),exam_date:$("examDate").value||null,default_duration_minutes:duration,status:"published",registration_state:$("registrationState").value,instructions:$("examInstructions").value})).exam:saved.exam;
+  exams=[finalExam,...exams.filter(x=>x.id!==id)];$("examSelect").innerHTML=exams.map(x=>'<option value="'+safe(x.id)+'">'+safe(x.title)+' · '+safe(x.status)+'</option>').join("")||'<option value="">لا توجد اختبارات</option>';$("examSelect").value=id;savedQalunTeacherIds=qids;fillExamForm(finalExam);workspaceLoadedExamId="";
+  saveStage="تحديث لوحة الإدارة والاختبار المتاح للطالبات";
+  selectedPublicExamId=id;
+  status("saveAllWorkspaceStatus",publish?"تم حفظ البيانات ونشر الاختبار. قائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون محفوظة. حالة التسجيل: "+({"open":"مفتوح","closed":"مغلق","paused":"متوقف مؤقتًا"}[finalExam.registration_state]||finalExam.registration_state)+".":"تم حفظ بيانات الاختبار وقائمة الطالبات ("+imported.saved+") والمواعيد واختيارات قالون دون نشر اختبار جديد. يمكنك إنشاء القوائم الآن أو نشر الاختبار لاحقًا.","ok");
+  status("adminStatus",publish?"تم حفظ إعدادات الاختبار ونشره.":"تم حفظ إعدادات الاختبار دون نشره.","ok");
+  // عند تعديل المواعيد في اختبار محفوظ، أعد إنشاء القوائم بعد الحفظ حتى تُوزّع الطالبات المتبقيات تلقائيًا على السعة الجديدة.
+  const refreshAfterSave=()=>Promise.allSettled([loadDashboard(),renderTeachers(),loadPublicExam(id)]).then(results=>{if(results.some(x=>x.status==="rejected"))status("adminStatus","تم الحفظ بنجاح، لكن تعذر تحديث بعض بيانات العرض. استخدمي زر تحديث الإحصائيات أو أعيدي تحميل الصفحة.","warn");});
+  if(regenerateListsAfterSave){
+    generateExamLists().then(()=>{loadedScheduleSnapshot=$("scheduleInput").value;return refreshAfterSave();}).catch(()=>refreshAfterSave());
+  }else refreshAfterSave();
+   if(!publish&&adminViewMode==="new")showAdminView("saved");
+ }catch(e){
+  const errorKey=typeof e==="string"?e:(e?.message||"UNKNOWN_ERROR");
+  const errorCode=/^[A-Z][A-Z0-9_]{2,79}$/.test(errorKey)&&!messages[errorKey]?" (رمز الخطأ: "+errorKey+")":"";
+  status("saveAllWorkspaceStatus","تعذّر إتمام العملية عند مرحلة «"+saveStage+"». "+readable(e)+errorCode,"bad");
+ }
+ finally{locked.forEach((el,i)=>{if(el.isConnected)el.disabled=previous[i];});btn.disabled=false;btn.textContent=originalText;}
+}
+$("saveAllWorkspaceBtn").addEventListener("click",()=>saveAllExamWorkspace(false));
+$("publishExamBtn").addEventListener("click",()=>saveAllExamWorkspace(true));
+function closeCapacityChoice(){ $("capacityChoiceModal").classList.add("hidden"); pendingCapacitySave=null; }
+$("closeCapacityChoice").addEventListener("click",closeCapacityChoice);
+$("addTeacherNowBtn").addEventListener("click",()=>{const publish=pendingCapacitySave;closeCapacityChoice();status("saveAllWorkspaceStatus","لم يتم حفظ الاختبار بعد. أضيفي المعلمة ومواعيدها، ثم اضغطي «"+(publish?"نشر الاختبار":"حفظ بيانات الاختبار")+"» مرة أخرى.","warn");});
+$("addTeacherLaterBtn").addEventListener("click",async()=>{const publish=pendingCapacitySave;closeCapacityChoice();allowUnderCapacitySaveOnce=true;await saveAllExamWorkspace(!!publish);});
+
+async function loadAdminPublicRefresh(){await loadPublicExam();}
+try{await supabase.auth.signOut({scope:"local"});}catch(e){}
+accessToken=null;
+$("loginCard").classList.remove("hidden");
+$("adminWorkspace").classList.add("hidden");
+$("teacherQuickActions").classList.add("hidden");
+await loadPublicExam();
+</script>
+</body>
+</html>
